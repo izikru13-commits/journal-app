@@ -87,14 +87,22 @@
             return () => clearTimeout(t);
         }, [phase, timeLeft]);
 
-        // Draw/move the guess marker as the player clicks.
+        // Draw/move the guess marker as the player clicks. Uses a custom divIcon rather than
+        // Leaflet's default marker (which needs external image assets) so the map works with
+        // no image dependency beyond the tiles themselves.
         useEffect(() => {
             const map = mapRef.current;
             if (!map || !guessLatLng) return;
             if (guessMarkerRef.current) {
                 guessMarkerRef.current.setLatLng([guessLatLng.lat, guessLatLng.lng]);
             } else {
-                guessMarkerRef.current = L.marker([guessLatLng.lat, guessLatLng.lng]).addTo(map);
+                const guessIcon = L.divIcon({
+                    className: '',
+                    html: '<div style="background:#facc15;width:18px;height:18px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px #ca8a04;"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                });
+                guessMarkerRef.current = L.marker([guessLatLng.lat, guessLatLng.lng], { icon: guessIcon }).addTo(map);
             }
         }, [guessLatLng]);
 

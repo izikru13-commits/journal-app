@@ -32,5 +32,13 @@ window.GameUtils = (function () {
         return shuffle(array).slice(0, Math.min(n, array.length));
     }
 
-    return { haversineDistanceKm, scoreByDistance, shuffle, pickRounds };
+    // Renders a country's flag as a Unicode emoji from its ISO alpha-2 code (e.g. "il" -> 🇮🇱).
+    // Avoids depending on an external flag-image service - works offline and on any device.
+    function flagEmoji(code) {
+        return code
+            .toUpperCase()
+            .replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
+    }
+
+    return { haversineDistanceKm, scoreByDistance, shuffle, pickRounds, flagEmoji };
 })();

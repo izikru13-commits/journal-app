@@ -3,7 +3,7 @@
 (function () {
     const { useState, useEffect } = React;
     const { FlagIcon, RefreshIcon, Trophy } = window.GameIcons;
-    const { shuffle, pickRounds } = window.GameUtils;
+    const { shuffle, pickRounds, flagEmoji } = window.GameUtils;
 
     const TOTAL_ROUNDS = 10;
     const POINTS_PER_CORRECT = 100;
@@ -22,7 +22,6 @@
         const [selectedCode, setSelectedCode] = useState(null);
         const [roundResults, setRoundResults] = useState([]);
         const [bestScore, setBestScore] = useState(null);
-        const [flagBroken, setFlagBroken] = useState(false);
 
         const target = roundCountries[round];
 
@@ -58,7 +57,6 @@
             setRound(nextIndex);
             setChoices(buildChoices(roundCountries[nextIndex], window.WORLD_COUNTRIES));
             setSelectedCode(null);
-            setFlagBroken(false);
             setPhase('guessing');
         };
 
@@ -69,7 +67,6 @@
             setChoices(buildChoices(fresh[0], window.WORLD_COUNTRIES));
             setSelectedCode(null);
             setRoundResults([]);
-            setFlagBroken(false);
             setBestScore(null);
             setPhase('guessing');
         };
@@ -98,18 +95,9 @@
 
                     <div className="text-center mb-6">
                         <p className="text-gray-400 mb-3">איזו מדינה זו?</p>
-                        {!flagBroken ? (
-                            <img
-                                src={`https://flagcdn.com/w320/${target.code}.png`}
-                                alt="דגל"
-                                onError={() => setFlagBroken(true)}
-                                className="mx-auto rounded-xl shadow-2xl border border-gray-700 max-h-56 object-contain bg-gray-800"
-                            />
-                        ) : (
-                            <div className="mx-auto w-56 h-40 flex items-center justify-center rounded-xl border border-gray-700 bg-gray-800 text-gray-500">
-                                לא ניתן לטעון דגל
-                            </div>
-                        )}
+                        <div className="mx-auto w-56 h-40 flex items-center justify-center rounded-xl shadow-2xl border border-gray-700 bg-gray-800 text-8xl leading-none">
+                            {flagEmoji(target.code)}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
