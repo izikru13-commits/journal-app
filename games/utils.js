@@ -41,9 +41,11 @@ window.GameUtils = (function () {
     }
 
     // Difficulty levels are cumulative: level N includes every entry tagged <= N, so level 1
-    // is a small pool of the most famous places and level 4 is the full, hardest set.
-    function poolForLevel(array, level) {
-        return array.filter((item) => (item.difficulty || 1) <= level);
+    // is a small pool of the most famous places and level 4 is the full, hardest set. `field` lets
+    // the same item array be filtered by different difficulty ratings for different games (e.g. a
+    // country can be an easy flag to recognize but a hard one to place on the map, or vice versa).
+    function poolForLevel(array, level, field = 'difficulty') {
+        return array.filter((item) => (item[field] || 1) <= level);
     }
 
     const LEVEL_LABELS = { 1: 'קל', 2: 'בינוני', 3: 'קשה', 4: 'מומחה' };

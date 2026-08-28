@@ -19,7 +19,7 @@
     // increasingly obscure countries.
     function poolForGlobeLevel(level) {
         if (level === 1) return window.CONTINENTS;
-        return poolForLevel(window.WORLD_COUNTRIES, level - 1);
+        return poolForLevel(window.WORLD_COUNTRIES, level - 1, 'globeDifficulty');
     }
 
     function GlobeGuessGame({ onExit }) {

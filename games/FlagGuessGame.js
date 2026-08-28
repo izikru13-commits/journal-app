@@ -27,7 +27,7 @@
         const target = roundCountries[round];
 
         const startGame = (lvl) => {
-            const pool = poolForLevel(window.WORLD_COUNTRIES, lvl);
+            const pool = poolForLevel(window.WORLD_COUNTRIES, lvl, 'flagDifficulty');
             const rounds = pickRounds(pool, TOTAL_ROUNDS);
             setRoundCountries(rounds);
             setChoices(buildChoices(rounds[0], window.WORLD_COUNTRIES));
@@ -58,7 +58,7 @@
         };
 
         const playAgain = () => {
-            const fresh = pickRounds(poolForLevel(window.WORLD_COUNTRIES, level), TOTAL_ROUNDS);
+            const fresh = pickRounds(poolForLevel(window.WORLD_COUNTRIES, level, 'flagDifficulty'), TOTAL_ROUNDS);
             setRoundCountries(fresh);
             setRound(0);
             setChoices(buildChoices(fresh[0], window.WORLD_COUNTRIES));
