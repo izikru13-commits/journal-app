@@ -82,17 +82,17 @@
         const totalScore = correctCount * POINTS_PER_CORRECT;
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-4 md:p-8 pb-24 md:pb-8">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-3 md:p-6 pb-24 md:pb-6">
                 <div className="max-w-2xl mx-auto">
                     <button
                         onClick={onExit}
-                        className="flex items-center gap-2 mb-4 text-gray-400 hover:text-white active:text-white transition-colors py-2"
+                        className="flex items-center gap-2 mb-2 text-gray-400 hover:text-white active:text-white transition-colors py-1"
                     >
                         <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                         <span className="text-base md:text-lg">חזרה למשחקים</span>
                     </button>
 
-                    <div className="flex items-center justify-between mb-6 bg-gray-800/60 rounded-2xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-4 bg-gray-800/60 rounded-2xl px-4 py-2">
                         <div className="flex items-center gap-2 text-gray-300">
                             <FlagIcon className="w-5 h-5 text-pink-400" />
                             <span>סיבוב {round + 1}/{roundCountries.length} · רמת {LEVEL_LABELS[level]}</span>
@@ -102,7 +102,7 @@
 
                     <div className="text-center mb-6">
                         <p className="text-gray-400 mb-3">איזו מדינה זו?</p>
-                        <div className="mx-auto w-56 h-40 flex items-center justify-center rounded-xl shadow-2xl border border-gray-700 bg-gray-800 text-8xl leading-none">
+                        <div className="mx-auto w-72 h-52 md:w-80 md:h-60 flex items-center justify-center rounded-xl shadow-2xl border border-gray-700 bg-gray-800 text-9xl leading-none">
                             {flagEmoji(target.code)}
                         </div>
                     </div>

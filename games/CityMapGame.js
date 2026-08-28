@@ -56,9 +56,14 @@
                 zoom: 7,
                 minZoom: 6,
                 maxZoom: 12,
-                maxBounds: [[28.3, 32.8], [34.2, 36.8]],
-                maxBoundsViscosity: 1.0,
+                maxBounds: [[27.5, 31.5], [35.0, 38.0]],
+                maxBoundsViscosity: 0.6,
                 attributionControl: false,
+                // Canvas rendering redraws as one bitmap instead of re-laying-out every polygon
+                // point in the DOM on each pan/zoom frame (Leaflet's default SVG renderer) - much
+                // smoother panning for a border+highways map with this many vector points.
+                preferCanvas: true,
+                wheelPxPerZoomLevel: 90,
             });
 
             Object.values(geo.neighbors).forEach((ring) => {
@@ -196,17 +201,17 @@
         const lastResult = roundScores[roundScores.length - 1];
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-4 md:p-8 pb-24 md:pb-8">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-3 md:p-6 pb-24 md:pb-6">
                 <div className="max-w-4xl mx-auto">
                     <button
                         onClick={onExit}
-                        className="flex items-center gap-2 mb-4 text-gray-400 hover:text-white active:text-white transition-colors py-2"
+                        className="flex items-center gap-2 mb-2 text-gray-400 hover:text-white active:text-white transition-colors py-1"
                     >
                         <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                         <span className="text-base md:text-lg">חזרה למשחקים</span>
                     </button>
 
-                    <div className="flex items-center justify-between mb-4 bg-gray-800/60 rounded-2xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-2 bg-gray-800/60 rounded-2xl px-4 py-2">
                         <div className="flex items-center gap-2 text-gray-300">
                             <MapPinIcon className="w-5 h-5 text-blue-400" />
                             <span>סיבוב {Math.min(round + 1, roundCities.length)}/{roundCities.length} · רמת {LEVEL_LABELS[level]}</span>
@@ -215,8 +220,8 @@
                     </div>
 
                     {phase === 'guessing' && (
-                        <div className="mb-4">
-                            <div className="text-center mb-2">
+                        <div className="mb-2">
+                            <div className="text-center mb-1">
                                 <span className="text-gray-400 text-sm">איפה נמצאת</span>
                                 <h2 className="text-2xl md:text-3xl font-bold text-blue-300">{target.name}</h2>
                             </div>
@@ -235,7 +240,7 @@
                     <div
                         ref={mapContainerRef}
                         style={{ background: '#4338ca' }}
-                        className="w-full h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden border border-gray-700"
+                        className="w-full h-[68vh] md:h-[75vh] rounded-2xl overflow-hidden border border-gray-700"
                     />
 
                     {phase === 'guessing' && guessLatLng && (

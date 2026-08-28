@@ -94,6 +94,12 @@
                 setGuess({ lat, lng });
             });
 
+            // Damping gives the drag-to-rotate gesture momentum/glide instead of stopping dead the
+            // instant the finger lifts, which is what actually reads as "smooth" on a touchscreen.
+            const controls = globe.controls();
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.12;
+
             globeRef.current = globe;
 
             const handleResize = () => {
@@ -171,17 +177,17 @@
         const lastResult = roundScores[roundScores.length - 1];
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-4 md:p-8 pb-24 md:pb-8">
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-3 md:p-6 pb-24 md:pb-6">
                 <div className="max-w-4xl mx-auto">
                     <button
                         onClick={onExit}
-                        className="flex items-center gap-2 mb-4 text-gray-400 hover:text-white active:text-white transition-colors py-2"
+                        className="flex items-center gap-2 mb-2 text-gray-400 hover:text-white active:text-white transition-colors py-1"
                     >
                         <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                         <span className="text-base md:text-lg">חזרה למשחקים</span>
                     </button>
 
-                    <div className="flex items-center justify-between mb-4 bg-gray-800/60 rounded-2xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-2 bg-gray-800/60 rounded-2xl px-4 py-2">
                         <div className="flex items-center gap-2 text-gray-300">
                             <GlobeIcon className="w-5 h-5 text-cyan-400" />
                             <span>סיבוב {round + 1}/{roundCountries.length} · רמת {LEVEL_LABELS[level]}</span>
@@ -190,7 +196,7 @@
                     </div>
 
                     {phase === 'guessing' && (
-                        <div className="text-center mb-3">
+                        <div className="text-center mb-2">
                             <span className="text-gray-400 text-sm">איפה נמצאת</span>
                             <h2 className="text-2xl md:text-3xl font-bold text-cyan-300">{target.nameHe}</h2>
                             <p className="text-gray-500 text-sm mt-1">סובבו וזמו את הגלובוס, ולחצו על המיקום המשוער</p>
@@ -200,7 +206,7 @@
                     <div
                         ref={containerRef}
                         dir="ltr"
-                        className="relative w-full h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden border border-gray-700 bg-black"
+                        className="relative w-full h-[68vh] md:h-[75vh] rounded-2xl overflow-hidden border border-gray-700 bg-black"
                     />
 
                     {phase === 'guessing' && guess && (
