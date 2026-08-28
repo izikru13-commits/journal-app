@@ -3,11 +3,12 @@
 (function () {
     const { useState, useEffect } = React;
     const { FlagIcon, RefreshIcon, Trophy } = window.GameIcons;
-    const { shuffle, pickRounds, flagEmoji } = window.GameUtils;
+    const { shuffle, pickRounds, flagEmoji, poolForLevel, LEVEL_LABELS } = window.GameUtils;
+    const { LevelSelect, LeaderboardPanel } = window.GameChrome;
 
     const TOTAL_ROUNDS = 10;
     const POINTS_PER_CORRECT = 100;
-    const HIGH_SCORE_KEY = 'gameHighScore_flagGuess';
+    const LEADERBOARD_KEY = 'gameLeaderboard_flagGuess';
 
     function buildChoices(target, allCountries) {
         const distractors = shuffle(allCountries.filter((c) => c.code !== target.code)).slice(0, 3);
@@ -15,31 +16,27 @@
     }
 
     function FlagGuessGame({ onExit }) {
-        const [roundCountries, setRoundCountries] = useState(() => pickRounds(window.WORLD_COUNTRIES, TOTAL_ROUNDS));
+        const [level, setLevel] = useState(null);
+        const [roundCountries, setRoundCountries] = useState([]);
         const [round, setRound] = useState(0);
-        const [choices, setChoices] = useState(() => buildChoices(roundCountries[0], window.WORLD_COUNTRIES));
+        const [choices, setChoices] = useState([]);
         const [phase, setPhase] = useState('guessing'); // 'guessing' | 'revealed' | 'results'
         const [selectedCode, setSelectedCode] = useState(null);
         const [roundResults, setRoundResults] = useState([]);
-        const [bestScore, setBestScore] = useState(null);
 
         const target = roundCountries[round];
 
-        useEffect(() => {
-            if (phase !== 'results') return;
-            try {
-                const totalScore = roundResults.filter((r) => r.correct).length * POINTS_PER_CORRECT;
-                const saved = JSON.parse(localStorage.getItem(HIGH_SCORE_KEY) || 'null');
-                if (!saved || totalScore > saved.best) {
-                    localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify({
-                        best: totalScore, lastPlayedAt: new Date().toISOString(), roundsPlayed: roundResults.length,
-                    }));
-                    setBestScore(totalScore);
-                } else {
-                    setBestScore(saved.best);
-                }
-            } catch (e) { /* localStorage unavailable, skip high score */ }
-        }, [phase]);
+        const startGame = (lvl) => {
+            const pool = poolForLevel(window.WORLD_COUNTRIES, lvl);
+            const rounds = pickRounds(pool, TOTAL_ROUNDS);
+            setRoundCountries(rounds);
+            setChoices(buildChoices(rounds[0], window.WORLD_COUNTRIES));
+            setRound(0);
+            setRoundResults([]);
+            setSelectedCode(null);
+            setPhase('guessing');
+            setLevel(lvl);
+        };
 
         const choose = (code) => {
             if (phase !== 'guessing') return;
@@ -61,15 +58,25 @@
         };
 
         const playAgain = () => {
-            const fresh = pickRounds(window.WORLD_COUNTRIES, TOTAL_ROUNDS);
+            const fresh = pickRounds(poolForLevel(window.WORLD_COUNTRIES, level), TOTAL_ROUNDS);
             setRoundCountries(fresh);
             setRound(0);
             setChoices(buildChoices(fresh[0], window.WORLD_COUNTRIES));
             setSelectedCode(null);
             setRoundResults([]);
-            setBestScore(null);
             setPhase('guessing');
         };
+
+        if (level == null) {
+            return (
+                <LevelSelect
+                    title="ניחוש דגלים"
+                    subtitle="בחרו רמת קושי"
+                    gradient="from-pink-500 to-red-600"
+                    onSelect={startGame}
+                />
+            );
+        }
 
         const correctCount = roundResults.filter((r) => r.correct).length;
         const totalScore = correctCount * POINTS_PER_CORRECT;
@@ -88,7 +95,7 @@
                     <div className="flex items-center justify-between mb-6 bg-gray-800/60 rounded-2xl px-4 py-3">
                         <div className="flex items-center gap-2 text-gray-300">
                             <FlagIcon className="w-5 h-5 text-pink-400" />
-                            <span>סיבוב {round + 1}/{roundCountries.length}</span>
+                            <span>סיבוב {round + 1}/{roundCountries.length} · רמת {LEVEL_LABELS[level]}</span>
                         </div>
                         <div className="font-bold text-lg">{correctCount}/{roundCountries.length} נכונות</div>
                     </div>
@@ -141,16 +148,13 @@
                 </div>
 
                 {phase === 'results' && (
-                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4">
-                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl">
+                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl my-8">
                             <Trophy className="w-14 h-14 mx-auto mb-3 text-yellow-400" />
                             <h2 className="text-2xl font-bold mb-2">המשחק נגמר!</h2>
                             <p className="text-gray-400 mb-1">ענית נכון על</p>
                             <p className="text-4xl font-bold text-blue-400 mb-1">{correctCount}/{roundCountries.length}</p>
                             <p className="text-gray-400 mb-4">{totalScore.toLocaleString()} נקודות</p>
-                            {bestScore != null && (
-                                <p className="text-sm text-gray-400 mb-6">השיא שלך: {bestScore.toLocaleString()}</p>
-                            )}
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={playAgain}
@@ -165,6 +169,7 @@
                                     חזרה למשחקים
                                 </button>
                             </div>
+                            <LeaderboardPanel storageKey={LEADERBOARD_KEY} points={totalScore} />
                         </div>
                     </div>
                 )}

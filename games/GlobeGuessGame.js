@@ -1,23 +1,34 @@
-// Globe game: a country name is shown, the player clicks its location on a rotatable 3D globe.
-// Known simplification: scored against the country's capital/centroid point, not its true polygon
-// boundary (full boundary data would be too heavy to ship with no backend/bundler). A click that
-// lands well inside a geographically large country but far from its capital may score imperfectly.
+// Globe game: a country (or, at the easiest level, a continent) name is shown, the player clicks
+// its location on a rotatable 3D globe. Continent names are always shown on the globe itself as
+// orientation labels.
+// Known simplification: countries are scored against their capital/centroid point, not their true
+// polygon boundary (full boundary data would be too heavy to ship with no backend/bundler). A click
+// that lands well inside a geographically large country but far from its capital may score imperfectly.
 (function () {
     const { useState, useEffect, useRef } = React;
     const { GlobeIcon, RefreshIcon, Trophy } = window.GameIcons;
-    const { haversineDistanceKm, scoreByDistance, pickRounds } = window.GameUtils;
+    const { haversineDistanceKm, scoreByDistance, pickRounds, poolForLevel, LEVEL_LABELS } = window.GameUtils;
+    const { LevelSelect, LeaderboardPanel } = window.GameChrome;
 
     const TOTAL_ROUNDS = 10;
-    const MAX_DISTANCE_KM = 4000;
-    const HIGH_SCORE_KEY = 'gameHighScore_globeGuess';
+    const MAX_DISTANCE_KM_COUNTRY = 4000;
+    const MAX_DISTANCE_KM_CONTINENT = 6000;
+    const LEADERBOARD_KEY = 'gameLeaderboard_globeGuess';
+
+    // Level 1 is continents only (the broadest, most forgiving targets); levels 2-4 step through
+    // increasingly obscure countries.
+    function poolForGlobeLevel(level) {
+        if (level === 1) return window.CONTINENTS;
+        return poolForLevel(window.WORLD_COUNTRIES, level - 1);
+    }
 
     function GlobeGuessGame({ onExit }) {
-        const [roundCountries, setRoundCountries] = useState(() => pickRounds(window.WORLD_COUNTRIES, TOTAL_ROUNDS));
+        const [level, setLevel] = useState(null);
+        const [roundCountries, setRoundCountries] = useState([]);
         const [round, setRound] = useState(0);
         const [phase, setPhase] = useState('guessing'); // 'guessing' | 'revealed' | 'results'
         const [guess, setGuess] = useState(null);
         const [roundScores, setRoundScores] = useState([]);
-        const [bestScore, setBestScore] = useState(null);
 
         const containerRef = useRef(null);
         const globeRef = useRef(null);
@@ -30,10 +41,23 @@
             phaseRef.current = phase;
         }, [phase]);
 
-        // Initialize the 3D globe once. globe.gl does not reliably read the container's own
-        // rendered size on construction (it can default to the full window), so pass the
-        // container's actual dimensions explicitly and keep them in sync on resize.
+        const startGame = (lvl) => {
+            const rounds = pickRounds(poolForGlobeLevel(lvl), TOTAL_ROUNDS);
+            setRoundCountries(rounds);
+            setRound(0);
+            setRoundScores([]);
+            guessRef.current = null;
+            setGuess(null);
+            phaseRef.current = 'guessing';
+            setPhase('guessing');
+            setLevel(lvl);
+        };
+
+        // Initialize the 3D globe once the game starts. globe.gl does not reliably read the
+        // container's own rendered size on construction (it can default to the full window), so
+        // pass the container's actual dimensions explicitly and keep them in sync on resize.
         useEffect(() => {
+            if (level == null || !containerRef.current || globeRef.current) return;
             const el = containerRef.current;
             const globe = Globe()(el)
                 .width(el.clientWidth)
@@ -43,6 +67,25 @@
                 .pointAltitude(0.015)
                 .pointRadius(0.45)
                 .pointColor('color')
+                // Continent names as real HTML elements (not canvas-drawn text) so they render with the
+                // page's own font and reliably support Hebrew - globe.gl's built-in label text renderer
+                // draws via a Latin-only glyph atlas and cannot render Hebrew characters.
+                .htmlElementsData(window.CONTINENTS)
+                .htmlLat('lat')
+                .htmlLng('lng')
+                .htmlElement((d) => {
+                    const el = document.createElement('div');
+                    el.textContent = d.nameHe;
+                    el.style.color = 'rgba(255,255,255,0.65)';
+                    el.style.fontSize = '13px';
+                    el.style.fontWeight = '600';
+                    el.style.fontFamily = "'Heebo', sans-serif";
+                    el.style.whiteSpace = 'nowrap';
+                    el.style.pointerEvents = 'none';
+                    el.style.textShadow = '0 1px 3px rgba(0,0,0,0.8)';
+                    el.style.transform = 'translate(-50%, -50%)';
+                    return el;
+                })
                 .pointOfView({ lat: 25, lng: 20, altitude: 2.3 }, 0);
 
             globe.onGlobeClick(({ lat, lng }) => {
@@ -64,7 +107,7 @@
                 globeRef.current = null;
                 if (containerRef.current) containerRef.current.innerHTML = '';
             };
-        }, []);
+        }, [level]);
 
         // Keep the globe's marker points in sync with guess / reveal state.
         useEffect(() => {
@@ -72,9 +115,9 @@
             if (!globe) return;
             const points = [];
             if (guess) points.push({ lat: guess.lat, lng: guess.lng, color: '#facc15' });
-            if (phase === 'revealed') points.push({ lat: target.lat, lng: target.lng, color: '#22c55e' });
+            if (phase === 'revealed' && target) points.push({ lat: target.lat, lng: target.lng, color: '#22c55e' });
             globe.pointsData(points);
-            if (phase === 'revealed') {
+            if (phase === 'revealed' && target) {
                 globe.pointOfView({ lat: target.lat, lng: target.lng, altitude: 1.6 }, 1000);
             }
         }, [guess, phase]);
@@ -83,27 +126,12 @@
             if (phaseRef.current !== 'guessing') return;
             phaseRef.current = 'revealed';
             const g = guessRef.current;
+            const maxDist = target.isContinent ? MAX_DISTANCE_KM_CONTINENT : MAX_DISTANCE_KM_COUNTRY;
             const distanceKm = g ? haversineDistanceKm(g.lat, g.lng, target.lat, target.lng) : null;
-            const points = scoreByDistance(distanceKm, MAX_DISTANCE_KM);
+            const points = scoreByDistance(distanceKm, maxDist);
             setRoundScores((prev) => [...prev, { code: target.code, distanceKm, points }]);
             setPhase('revealed');
         };
-
-        useEffect(() => {
-            if (phase !== 'results') return;
-            try {
-                const totalScore = roundScores.reduce((s, r) => s + r.points, 0);
-                const saved = JSON.parse(localStorage.getItem(HIGH_SCORE_KEY) || 'null');
-                if (!saved || totalScore > saved.best) {
-                    localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify({
-                        best: totalScore, lastPlayedAt: new Date().toISOString(), roundsPlayed: roundScores.length,
-                    }));
-                    setBestScore(totalScore);
-                } else {
-                    setBestScore(saved.best);
-                }
-            } catch (e) { /* localStorage unavailable, skip high score */ }
-        }, [phase]);
 
         const nextRound = () => {
             if (round + 1 >= roundCountries.length) {
@@ -120,14 +148,24 @@
         const playAgain = () => {
             guessRef.current = null;
             setGuess(null);
-            setRoundCountries(pickRounds(window.WORLD_COUNTRIES, TOTAL_ROUNDS));
+            setRoundCountries(pickRounds(poolForGlobeLevel(level), TOTAL_ROUNDS));
             setRound(0);
             setRoundScores([]);
-            setBestScore(null);
             phaseRef.current = 'guessing';
             setPhase('guessing');
             if (globeRef.current) globeRef.current.pointOfView({ lat: 25, lng: 20, altitude: 2.3 }, 800);
         };
+
+        if (level == null) {
+            return (
+                <LevelSelect
+                    title="מדינה על הגלובוס"
+                    subtitle="ברמה הקלה מנחשים יבשות, ברמות הגבוהות - מדינות"
+                    gradient="from-cyan-500 to-teal-600"
+                    onSelect={startGame}
+                />
+            );
+        }
 
         const totalScore = roundScores.reduce((s, r) => s + r.points, 0);
         const lastResult = roundScores[roundScores.length - 1];
@@ -146,7 +184,7 @@
                     <div className="flex items-center justify-between mb-4 bg-gray-800/60 rounded-2xl px-4 py-3">
                         <div className="flex items-center gap-2 text-gray-300">
                             <GlobeIcon className="w-5 h-5 text-cyan-400" />
-                            <span>סיבוב {round + 1}/{roundCountries.length}</span>
+                            <span>סיבוב {round + 1}/{roundCountries.length} · רמת {LEVEL_LABELS[level]}</span>
                         </div>
                         <div className="font-bold text-lg">{totalScore.toLocaleString()} נק'</div>
                     </div>
@@ -161,7 +199,8 @@
 
                     <div
                         ref={containerRef}
-                        className="w-full h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden border border-gray-700 bg-black"
+                        dir="ltr"
+                        className="relative w-full h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden border border-gray-700 bg-black"
                     />
 
                     {phase === 'guessing' && guess && (
@@ -195,15 +234,12 @@
                 </div>
 
                 {phase === 'results' && (
-                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4">
-                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl">
+                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl my-8">
                             <Trophy className="w-14 h-14 mx-auto mb-3 text-yellow-400" />
                             <h2 className="text-2xl font-bold mb-2">המשחק נגמר!</h2>
                             <p className="text-gray-400 mb-1">הניקוד שלך</p>
                             <p className="text-4xl font-bold text-cyan-400 mb-4">{totalScore.toLocaleString()}</p>
-                            {bestScore != null && (
-                                <p className="text-sm text-gray-400 mb-6">השיא שלך: {bestScore.toLocaleString()}</p>
-                            )}
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={playAgain}
@@ -218,6 +254,7 @@
                                     חזרה למשחקים
                                 </button>
                             </div>
+                            <LeaderboardPanel storageKey={LEADERBOARD_KEY} points={totalScore} />
                         </div>
                     </div>
                 )}

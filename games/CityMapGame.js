@@ -1,22 +1,25 @@
-// City-guess game: an Israeli city name is shown, the player has 10 seconds to click its location on a map.
+// City-guess game: an Israeli city name is shown, the player has 10 seconds to click its location
+// on a vector map of Israel (borders, neighboring countries and major highways - no map tile images,
+// since those would be blocked when this page runs inside a sandboxed artifact viewer).
 (function () {
     const { useState, useEffect, useRef } = React;
     const { MapPinIcon, ClockIcon, RefreshIcon, Trophy } = window.GameIcons;
-    const { haversineDistanceKm, scoreByDistance, pickRounds } = window.GameUtils;
+    const { haversineDistanceKm, scoreByDistance, pickRounds, poolForLevel, LEVEL_LABELS } = window.GameUtils;
+    const { LevelSelect, LeaderboardPanel } = window.GameChrome;
 
     const TOTAL_ROUNDS = 10;
     const ROUND_SECONDS = 10;
     const MAX_DISTANCE_KM = 100;
-    const HIGH_SCORE_KEY = 'gameHighScore_mapGuess';
+    const LEADERBOARD_KEY = 'gameLeaderboard_mapGuess';
 
     function CityMapGame({ onExit }) {
-        const [roundCities, setRoundCities] = useState(() => pickRounds(window.ISRAEL_CITIES, TOTAL_ROUNDS));
+        const [level, setLevel] = useState(null);
+        const [roundCities, setRoundCities] = useState([]);
         const [round, setRound] = useState(0);
         const [phase, setPhase] = useState('guessing'); // 'guessing' | 'revealed' | 'results'
         const [timeLeft, setTimeLeft] = useState(ROUND_SECONDS);
         const [guessLatLng, setGuessLatLng] = useState(null);
         const [roundScores, setRoundScores] = useState([]);
-        const [bestScore, setBestScore] = useState(null);
 
         const mapContainerRef = useRef(null);
         const mapRef = useRef(null);
@@ -32,20 +35,43 @@
             phaseRef.current = phase;
         }, [phase]);
 
-        // Initialize the Leaflet map once, bounded to Israel.
+        const startGame = (lvl) => {
+            const pool = poolForLevel(window.ISRAEL_CITIES, lvl);
+            setRoundCities(pickRounds(pool, TOTAL_ROUNDS));
+            setRound(0);
+            setRoundScores([]);
+            setTimeLeft(ROUND_SECONDS);
+            phaseRef.current = 'guessing';
+            setPhase('guessing');
+            setLevel(lvl);
+        };
+
+        // Initialize the Leaflet map once the game starts. Drawn entirely from vector data
+        // (country borders + highways) with no tile layer - no image host dependency at all.
         useEffect(() => {
+            if (level == null || !mapContainerRef.current || mapRef.current) return;
+            const geo = window.ISRAEL_GEO;
             const map = L.map(mapContainerRef.current, {
                 center: [31.5, 35.0],
                 zoom: 7,
                 minZoom: 6,
-                maxZoom: 13,
-                maxBounds: [[28.5, 33.0], [34.0, 36.5]],
+                maxZoom: 12,
+                maxBounds: [[28.3, 32.8], [34.2, 36.8]],
                 maxBoundsViscosity: 1.0,
+                attributionControl: false,
             });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 19,
-            }).addTo(map);
+
+            Object.values(geo.neighbors).forEach((ring) => {
+                L.polygon(ring, { color: '#94a3b8', weight: 1, fillColor: '#c9c2ab', fillOpacity: 0.45 }).addTo(map);
+            });
+            (geo.fillExtra || []).forEach((ring) => {
+                L.polygon(ring, { stroke: false, fillColor: '#f3ecd6', fillOpacity: 0.97 }).addTo(map);
+            });
+            L.polygon(geo.israel, { color: '#1f2937', weight: 2.5, fillColor: '#f3ecd6', fillOpacity: 0.97 }).addTo(map);
+            geo.highways.forEach((hw) => {
+                L.polyline(hw.points, { color: '#f59e0b', weight: 2.5, opacity: 0.85, lineCap: 'round' }).addTo(map);
+            });
+
             map.on('click', (e) => {
                 if (phaseRef.current !== 'guessing') return;
                 guessRef.current = { lat: e.latlng.lat, lng: e.latlng.lng };
@@ -56,7 +82,7 @@
                 map.remove();
                 mapRef.current = null;
             };
-        }, []);
+        }, [level]);
 
         const clearRoundLayers = () => {
             const map = mapRef.current;
@@ -78,18 +104,18 @@
 
         // Countdown timer while guessing.
         useEffect(() => {
-            if (phase !== 'guessing') return;
+            if (level == null || phase !== 'guessing') return;
             if (timeLeft <= 0) {
                 resolveRound();
                 return;
             }
             const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
             return () => clearTimeout(t);
-        }, [phase, timeLeft]);
+        }, [level, phase, timeLeft]);
 
         // Draw/move the guess marker as the player clicks. Uses a custom divIcon rather than
         // Leaflet's default marker (which needs external image assets) so the map works with
-        // no image dependency beyond the tiles themselves.
+        // no image dependency at all.
         useEffect(() => {
             const map = mapRef.current;
             if (!map || !guessLatLng) return;
@@ -129,23 +155,6 @@
             }
         }, [phase]);
 
-        // Persist / read the high score once the session ends.
-        useEffect(() => {
-            if (phase !== 'results') return;
-            try {
-                const totalScore = roundScores.reduce((s, r) => s + r.points, 0);
-                const saved = JSON.parse(localStorage.getItem(HIGH_SCORE_KEY) || 'null');
-                if (!saved || totalScore > saved.best) {
-                    localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify({
-                        best: totalScore, lastPlayedAt: new Date().toISOString(), roundsPlayed: roundScores.length,
-                    }));
-                    setBestScore(totalScore);
-                } else {
-                    setBestScore(saved.best);
-                }
-            } catch (e) { /* localStorage unavailable, skip high score */ }
-        }, [phase]);
-
         const nextRound = () => {
             if (round + 1 >= roundCities.length) {
                 setPhase('results');
@@ -164,14 +173,24 @@
             clearRoundLayers();
             guessRef.current = null;
             setGuessLatLng(null);
-            setRoundCities(pickRounds(window.ISRAEL_CITIES, TOTAL_ROUNDS));
+            setRoundCities(pickRounds(poolForLevel(window.ISRAEL_CITIES, level), TOTAL_ROUNDS));
             setRound(0);
             setRoundScores([]);
             setTimeLeft(ROUND_SECONDS);
             phaseRef.current = 'guessing';
             setPhase('guessing');
-            setBestScore(null);
         };
+
+        if (level == null) {
+            return (
+                <LevelSelect
+                    title="ניחוש עיר על המפה"
+                    subtitle="בחרו רמת קושי"
+                    gradient="from-blue-500 to-purple-600"
+                    onSelect={startGame}
+                />
+            );
+        }
 
         const totalScore = roundScores.reduce((s, r) => s + r.points, 0);
         const lastResult = roundScores[roundScores.length - 1];
@@ -190,7 +209,7 @@
                     <div className="flex items-center justify-between mb-4 bg-gray-800/60 rounded-2xl px-4 py-3">
                         <div className="flex items-center gap-2 text-gray-300">
                             <MapPinIcon className="w-5 h-5 text-blue-400" />
-                            <span>סיבוב {Math.min(round + 1, roundCities.length)}/{roundCities.length}</span>
+                            <span>סיבוב {Math.min(round + 1, roundCities.length)}/{roundCities.length} · רמת {LEVEL_LABELS[level]}</span>
                         </div>
                         <div className="font-bold text-lg">{totalScore.toLocaleString()} נק'</div>
                     </div>
@@ -215,6 +234,7 @@
 
                     <div
                         ref={mapContainerRef}
+                        style={{ background: '#4338ca' }}
                         className="w-full h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden border border-gray-700"
                     />
 
@@ -248,15 +268,12 @@
                 </div>
 
                 {phase === 'results' && (
-                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4">
-                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl">
+                    <div className="fixed inset-0 z-50 modal-backdrop bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+                        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl my-8">
                             <Trophy className="w-14 h-14 mx-auto mb-3 text-yellow-400" />
                             <h2 className="text-2xl font-bold mb-2">המשחק נגמר!</h2>
                             <p className="text-gray-400 mb-1">הניקוד שלך</p>
                             <p className="text-4xl font-bold text-blue-400 mb-4">{totalScore.toLocaleString()}</p>
-                            {bestScore != null && (
-                                <p className="text-sm text-gray-400 mb-6">השיא שלך: {bestScore.toLocaleString()}</p>
-                            )}
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={playAgain}
@@ -271,6 +288,7 @@
                                     חזרה למשחקים
                                 </button>
                             </div>
+                            <LeaderboardPanel storageKey={LEADERBOARD_KEY} points={totalScore} />
                         </div>
                     </div>
                 )}

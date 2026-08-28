@@ -40,5 +40,37 @@ window.GameUtils = (function () {
             .replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
     }
 
-    return { haversineDistanceKm, scoreByDistance, shuffle, pickRounds, flagEmoji };
+    // Difficulty levels are cumulative: level N includes every entry tagged <= N, so level 1
+    // is a small pool of the most famous places and level 4 is the full, hardest set.
+    function poolForLevel(array, level) {
+        return array.filter((item) => (item.difficulty || 1) <= level);
+    }
+
+    const LEVEL_LABELS = { 1: 'קל', 2: 'בינוני', 3: 'קשה', 4: 'מומחה' };
+
+    // Per-game leaderboards (name + city + score), stored in localStorage, top 20 by score.
+    function getLeaderboard(key) {
+        try {
+            const raw = JSON.parse(localStorage.getItem(key) || '[]');
+            return Array.isArray(raw) ? raw : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function addLeaderboardEntry(key, entry) {
+        const list = getLeaderboard(key);
+        list.push({ ...entry, date: new Date().toISOString() });
+        list.sort((a, b) => b.points - a.points);
+        const trimmed = list.slice(0, 20);
+        try {
+            localStorage.setItem(key, JSON.stringify(trimmed));
+        } catch (e) { /* localStorage unavailable, skip persisting */ }
+        return trimmed;
+    }
+
+    return {
+        haversineDistanceKm, scoreByDistance, shuffle, pickRounds, flagEmoji,
+        poolForLevel, LEVEL_LABELS, getLeaderboard, addLeaderboardEntry,
+    };
 })();

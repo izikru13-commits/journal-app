@@ -2,6 +2,7 @@
 (function () {
     const { useState, useEffect } = React;
     const { MapPinIcon, FlagIcon, GlobeIcon, StarIcon } = window.GameIcons;
+    const { getLeaderboard } = window.GameUtils;
 
     const GAME_META = [
         {
@@ -10,7 +11,7 @@
             description: 'שם עיר בישראל מוצג לך - יש לך 10 שניות לסמן במפה איפה היא נמצאת.',
             icon: MapPinIcon,
             gradient: 'from-blue-500 to-purple-600',
-            highScoreKey: 'gameHighScore_mapGuess',
+            leaderboardKey: 'gameLeaderboard_mapGuess',
         },
         {
             key: 'flagGuess',
@@ -18,33 +19,29 @@
             description: 'דגל של מדינה בעולם מוצג לך - בחרו את המדינה הנכונה וגלו עליה עובדה מעניינת.',
             icon: FlagIcon,
             gradient: 'from-pink-500 to-red-600',
-            highScoreKey: 'gameHighScore_flagGuess',
+            leaderboardKey: 'gameLeaderboard_flagGuess',
         },
         {
             key: 'globeGuess',
             title: 'מדינה על הגלובוס',
-            description: 'שם מדינה מוצג לך - סובבו גלובוס תלת-ממדי ולחצו על המיקום שלה.',
+            description: 'שם מדינה או יבשת מוצג לכם - סובבו גלובוס תלת-ממדי ולחצו על המיקום שלו.',
             icon: GlobeIcon,
             gradient: 'from-cyan-500 to-teal-600',
-            highScoreKey: 'gameHighScore_globeGuess',
+            leaderboardKey: 'gameLeaderboard_globeGuess',
         },
     ];
 
     function GamesHub({ onExit }) {
         const [activeGame, setActiveGame] = useState(null);
-        const [highScores, setHighScores] = useState({});
+        const [topScores, setTopScores] = useState({});
 
         useEffect(() => {
             const scores = {};
             GAME_META.forEach((g) => {
-                try {
-                    const saved = JSON.parse(localStorage.getItem(g.highScoreKey) || 'null');
-                    scores[g.key] = saved ? saved.best : null;
-                } catch (e) {
-                    scores[g.key] = null;
-                }
+                const list = getLeaderboard(g.leaderboardKey);
+                scores[g.key] = list.length > 0 ? list[0] : null;
             });
-            setHighScores(scores);
+            setTopScores(scores);
         }, [activeGame]);
 
         if (activeGame === 'mapGuess') {
@@ -78,7 +75,7 @@
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         {GAME_META.map((game) => {
                             const Icon = game.icon;
-                            const best = highScores[game.key];
+                            const top = topScores[game.key];
                             return (
                                 <button
                                     key={game.key}
@@ -88,10 +85,10 @@
                                     <Icon className="w-10 h-10 mb-3" />
                                     <h2 className="text-xl font-bold mb-2">{game.title}</h2>
                                     <p className="text-sm text-white/80 mb-4">{game.description}</p>
-                                    {best != null && (
+                                    {top != null && (
                                         <div className="flex items-center gap-1 text-sm text-yellow-200 bg-black/20 rounded-full px-3 py-1 w-fit">
                                             <StarIcon className="w-4 h-4" />
-                                            <span>השיא שלך: {best.toLocaleString()}</span>
+                                            <span>שיא: {top.name} - {top.points.toLocaleString()}</span>
                                         </div>
                                     )}
                                 </button>
