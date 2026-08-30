@@ -1,0 +1,48 @@
+// Zikkit — irregular verbs. Used by פעלים לא-סדירים (pick the correct past-simple form).
+const IRREGULAR_VERBS = [
+  // beginner
+  { id: "v-b-1", base: "go", past: "went", participle: "gone", translation: "ללכת", difficulty: "beginner" },
+  { id: "v-b-2", base: "have", past: "had", participle: "had", translation: "להחזיק / יש ל", difficulty: "beginner" },
+  { id: "v-b-3", base: "do", past: "did", participle: "done", translation: "לעשות", difficulty: "beginner" },
+  { id: "v-b-4", base: "see", past: "saw", participle: "seen", translation: "לראות", difficulty: "beginner" },
+  { id: "v-b-5", base: "eat", past: "ate", participle: "eaten", translation: "לאכול", difficulty: "beginner" },
+  { id: "v-b-6", base: "give", past: "gave", participle: "given", translation: "לתת", difficulty: "beginner" },
+  { id: "v-b-7", base: "take", past: "took", participle: "taken", translation: "לקחת", difficulty: "beginner" },
+  { id: "v-b-8", base: "come", past: "came", participle: "come", translation: "לבוא", difficulty: "beginner" },
+  { id: "v-b-9", base: "make", past: "made", participle: "made", translation: "לעשות / ליצור", difficulty: "beginner" },
+  { id: "v-b-10", base: "say", past: "said", participle: "said", translation: "לומר", difficulty: "beginner" },
+  { id: "v-b-11", base: "get", past: "got", participle: "gotten", translation: "לקבל", difficulty: "beginner" },
+  { id: "v-b-12", base: "know", past: "knew", participle: "known", translation: "לדעת", difficulty: "beginner" },
+  { id: "v-b-13", base: "find", past: "found", participle: "found", translation: "למצוא", difficulty: "beginner" },
+  { id: "v-b-14", base: "think", past: "thought", participle: "thought", translation: "לחשוב", difficulty: "beginner" },
+
+  // intermediate
+  { id: "v-i-1", base: "break", past: "broke", participle: "broken", translation: "לשבור", difficulty: "intermediate" },
+  { id: "v-i-2", base: "choose", past: "chose", participle: "chosen", translation: "לבחור", difficulty: "intermediate" },
+  { id: "v-i-3", base: "drive", past: "drove", participle: "driven", translation: "לנהוג", difficulty: "intermediate" },
+  { id: "v-i-4", base: "fly", past: "flew", participle: "flown", translation: "לעוף / לטוס", difficulty: "intermediate" },
+  { id: "v-i-5", base: "forget", past: "forgot", participle: "forgotten", translation: "לשכוח", difficulty: "intermediate" },
+  { id: "v-i-6", base: "hide", past: "hid", participle: "hidden", translation: "להסתיר", difficulty: "intermediate" },
+  { id: "v-i-7", base: "ride", past: "rode", participle: "ridden", translation: "לרכוב", difficulty: "intermediate" },
+  { id: "v-i-8", base: "speak", past: "spoke", participle: "spoken", translation: "לדבר", difficulty: "intermediate" },
+  { id: "v-i-9", base: "steal", past: "stole", participle: "stolen", translation: "לגנוב", difficulty: "intermediate" },
+  { id: "v-i-10", base: "swim", past: "swam", participle: "swum", translation: "לשחות", difficulty: "intermediate" },
+  { id: "v-i-11", base: "throw", past: "threw", participle: "thrown", translation: "לזרוק", difficulty: "intermediate" },
+  { id: "v-i-12", base: "wear", past: "wore", participle: "worn", translation: "ללבוש", difficulty: "intermediate" },
+  { id: "v-i-13", base: "write", past: "wrote", participle: "written", translation: "לכתוב", difficulty: "intermediate" },
+
+  // advanced
+  { id: "v-a-1", base: "arise", past: "arose", participle: "arisen", translation: "לקום / לעלות", difficulty: "advanced" },
+  { id: "v-a-2", base: "awake", past: "awoke", participle: "awoken", translation: "להתעורר", difficulty: "advanced" },
+  { id: "v-a-3", base: "bear", past: "bore", participle: "borne", translation: "לשאת", difficulty: "advanced" },
+  { id: "v-a-4", base: "bind", past: "bound", participle: "bound", translation: "לכרוך", difficulty: "advanced" },
+  { id: "v-a-5", base: "cling", past: "clung", participle: "clung", translation: "להיצמד", difficulty: "advanced" },
+  { id: "v-a-6", base: "dwell", past: "dwelt", participle: "dwelt", translation: "לשכון", difficulty: "advanced" },
+  { id: "v-a-7", base: "forsake", past: "forsook", participle: "forsaken", translation: "לנטוש", difficulty: "advanced" },
+  { id: "v-a-8", base: "grind", past: "ground", participle: "ground", translation: "לטחון", difficulty: "advanced" },
+  { id: "v-a-9", base: "shrink", past: "shrank", participle: "shrunk", translation: "להתכווץ", difficulty: "advanced" },
+  { id: "v-a-10", base: "slay", past: "slew", participle: "slain", translation: "להרוג", difficulty: "advanced" },
+  { id: "v-a-11", base: "spring", past: "sprang", participle: "sprung", translation: "לקפוץ", difficulty: "advanced" },
+  { id: "v-a-12", base: "strive", past: "strove", participle: "striven", translation: "לשאוף / להשתדל", difficulty: "advanced" },
+  { id: "v-a-13", base: "weave", past: "wove", participle: "woven", translation: "לארוג", difficulty: "advanced" },
+];

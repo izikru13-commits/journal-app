@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1e293b">
-    <title>מערכת ניהול יומנים - AI Learning Hub</title>
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi157ot7HotKog16DXmdee15wg15nXldee16DXmdedIiwic2hvcnRfbmFtZSI6Iteq15XXnteg15nedSIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMWUyOTNiIiwidGhlbWVfY29sb3IiOiIjMWUyOTNiIn0=">
+    <meta name="theme-color" content="#0f172a">
+    <title>זיקית - לומדים אנגלית לפי הרמה שלך</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIteW15nXp9eZ16ogLSDXnNeV157Xk9eZ150g15DXoNeS15zXmdeqIiwgInNob3J0X25hbWUiOiAi15bXmden15nXqiIsICJzdGFydF91cmwiOiAiLyIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwgInRoZW1lX2NvbG9yIjogIiMwZjE3MmEifQ==">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
-        
+
         * {
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        
+
         body {
             font-family: 'Heebo', sans-serif;
             margin: 0;
@@ -28,56 +28,29 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        
+
         * {
             scrollbar-width: thin;
             scrollbar-color: #4B5563 #1F2937;
         }
-        
+
         *::-webkit-scrollbar {
             width: 6px;
         }
-        
+
         *::-webkit-scrollbar-track {
             background: #1F2937;
         }
-        
+
         *::-webkit-scrollbar-thumb {
             background-color: #4B5563;
             border-radius: 3px;
-        }
-
-        .journal-card {
-            transition: all 0.3s ease;
-        }
-
-        .journal-card:active {
-            transform: scale(0.98);
-        }
-
-        @media (min-width: 768px) {
-            .journal-card:hover {
-                transform: translateY(-5px);
-            }
         }
 
         .modal-backdrop {
             backdrop-filter: blur(8px);
         }
 
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .modal-backdrop > div {
-                margin: 0;
-                border-radius: 1.5rem 1.5rem 0 0;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-            }
-        }
-
-        /* Touch-friendly elements */
         button, a, input, textarea {
             min-height: 44px;
         }
@@ -93,772 +66,89 @@
         }
 
         @keyframes slideUp {
-            from { 
-                opacity: 0; 
+            from {
+                opacity: 0;
                 transform: translateY(100%);
             }
-            to { 
-                opacity: 1; 
+            to {
+                opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        /* Pulse animation for save indicator */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        /* Wordle tile reveal */
+        @keyframes revealPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
         }
 
-        .pulse {
-            animation: pulse 1s ease-in-out;
+        .tile-reveal {
+            animation: revealPop 0.3s ease both;
+        }
+
+        /* Invalid guess shake */
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-8px); }
+            40%, 60% { transform: translateX(8px); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        // Icons
-        const Home = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-        );
-
-        const Plus = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-        );
-
-        const Trash2 = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        );
-
-        const BookOpen = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-        );
-
-        const CheckCircle2 = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        );
-
-        const Circle = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" strokeWidth={2} />
-            </svg>
-        );
-
-        const LinkIcon = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-        );
-
-        const FileText = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-        );
-
-        const TrendingUp = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-        );
-
-        const X = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        );
-
-        const ArrowRight = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-        );
-
-        const Share2 = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-        );
-
-        const Check = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-        );
-
-        // Color options for journals
-        const colorOptions = [
-            { name: 'כחול-סגול', gradient: 'from-blue-500 to-purple-600', border: 'border-blue-500' },
-            { name: 'ירוק-כחול', gradient: 'from-green-500 to-blue-600', border: 'border-green-500' },
-            { name: 'ורוד-אדום', gradient: 'from-pink-500 to-red-600', border: 'border-pink-500' },
-            { name: 'כתום-צהוב', gradient: 'from-orange-500 to-yellow-600', border: 'border-orange-500' },
-            { name: 'סגול-ורוד', gradient: 'from-purple-500 to-pink-600', border: 'border-purple-500' },
-            { name: 'טורקיז-ירוק', gradient: 'from-cyan-500 to-teal-600', border: 'border-cyan-500' },
-        ];
-
-        // Toast Notification Component
-        function Toast({ message, show, onClose }) {
-            useEffect(() => {
-                if (show) {
-                    const timer = setTimeout(onClose, 2000);
-                    return () => clearTimeout(timer);
-                }
-            }, [show, onClose]);
-
-            if (!show) return null;
-
-            return (
-                <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 toast">
-                    <div className="bg-green-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2">
-                        <Check className="w-5 h-5" />
-                        <span className="font-medium">{message}</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // Main App Component
-        function JournalApp() {
-            const [journals, setJournals] = useState([]);
-            const [currentJournal, setCurrentJournal] = useState(null);
-            const [showCreateModal, setShowCreateModal] = useState(false);
-            const [toast, setToast] = useState({ show: false, message: '' });
-
-            useEffect(() => {
-                const saved = localStorage.getItem('allJournals');
-                if (saved) {
-                    try {
-                        setJournals(JSON.parse(saved));
-                    } catch (e) {
-                        console.error('Error loading journals:', e);
-                    }
-                }
-            }, []);
-
-            useEffect(() => {
-                localStorage.setItem('allJournals', JSON.stringify(journals));
-            }, [journals]);
-
-            const createJournal = (journalData) => {
-                const newJournal = {
-                    id: Date.now(),
-                    ...journalData,
-                    createdAt: new Date().toISOString(),
-                    tasks: {},
-                    links: [],
-                    notes: ''
-                };
-
-                // Create empty weeks
-                for (let i = 1; i <= journalData.weeksCount; i++) {
-                    newJournal.tasks[`week${i}`] = [];
-                }
-
-                setJournals([...journals, newJournal]);
-                setShowCreateModal(false);
-                showToast('היומן נוצר בהצלחה! 🎉');
-            };
-
-            const deleteJournal = (id) => {
-                if (confirm('האם אתה בטוח שברצונך למחוק את היומן?')) {
-                    setJournals(journals.filter(j => j.id !== id));
-                    showToast('היומן נמחק');
-                }
-            };
-
-            const updateJournal = (id, updates) => {
-                setJournals(journals.map(j => j.id === id ? { ...j, ...updates } : j));
-            };
-
-            const showToast = (message) => {
-                setToast({ show: true, message });
-            };
-
-            const hideToast = () => {
-                setToast({ show: false, message: '' });
-            };
-
-            if (currentJournal) {
-                return (
-                    <>
-                        <JournalDashboard
-                            journal={currentJournal}
-                            onBack={() => setCurrentJournal(null)}
-                            onUpdate={(updates) => {
-                                updateJournal(currentJournal.id, updates);
-                                showToast('נשמר ✓');
-                            }}
-                        />
-                        <Toast message={toast.message} show={toast.show} onClose={hideToast} />
-                    </>
-                );
-            }
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-4 md:p-8 pb-24 md:pb-8">
-                    <div className="max-w-7xl mx-auto">
-                        {/* Header */}
-                        <div className="mb-6 md:mb-8 text-center">
-                            <h1 className="text-4xl md:text-6xl font-bold mb-2 md:mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                מערכת ניהול יומנים
-                            </h1>
-                            <p className="text-gray-400 text-base md:text-lg">נהל את כל תהליכי הלמידה שלך במקום אחד</p>
-                        </div>
-
-                        {/* Create New Journal Button - Mobile Fixed */}
-                        <div className="md:mb-8 md:flex md:justify-center hidden">
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 md:px-8 py-3 md:py-4 rounded-2xl font-semibold text-base md:text-lg shadow-2xl hover:shadow-purple-500/50 transition-all transform active:scale-95"
-                            >
-                                <Plus className="w-5 h-5 md:w-6 md:h-6" />
-                                צור יומן חדש
-                            </button>
-                        </div>
-
-                        {/* Journals Grid */}
-                        {journals.length === 0 ? (
-                            <div className="text-center py-12 md:py-20">
-                                <BookOpen className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 text-gray-600" />
-                                <h2 className="text-xl md:text-2xl font-semibold text-gray-400 mb-2">עדיין אין יומנים</h2>
-                                <p className="text-gray-500 text-sm md:text-base">צור את היומן הראשון שלך ותתחיל את המסע!</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {journals.map(journal => (
-                                    <JournalCard
-                                        key={journal.id}
-                                        journal={journal}
-                                        onOpen={() => setCurrentJournal(journal)}
-                                        onDelete={() => deleteJournal(journal.id)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Mobile Fixed Bottom Button */}
-                        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent backdrop-blur-sm z-40">
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 active:from-blue-700 active:to-purple-700 px-6 py-4 rounded-2xl font-semibold text-lg shadow-2xl transform active:scale-95 transition-all"
-                            >
-                                <Plus className="w-6 h-6" />
-                                צור יומן חדש
-                            </button>
-                        </div>
-
-                        {/* Create Modal */}
-                        {showCreateModal && (
-                            <CreateJournalModal
-                                onClose={() => setShowCreateModal(false)}
-                                onCreate={createJournal}
-                            />
-                        )}
-                    </div>
-                    <Toast message={toast.message} show={toast.show} onClose={hideToast} />
-                </div>
-            );
-        }
-
-        // Journal Card Component
-        function JournalCard({ journal, onOpen, onDelete }) {
-            const calculateProgress = () => {
-                let totalTasks = 0;
-                let completedTasks = 0;
-
-                Object.values(journal.tasks).forEach(week => {
-                    totalTasks += week.length;
-                    completedTasks += week.filter(t => t.completed).length;
-                });
-
-                return totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-            };
-
-            const progress = calculateProgress();
-            const color = colorOptions[journal.colorIndex] || colorOptions[0];
-
-            return (
-                <div className="journal-card bg-gray-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-6 border border-gray-700/50 shadow-xl hover:border-gray-600 transition-all">
-                    {/* Header with gradient */}
-                    <div className={`bg-gradient-to-r ${color.gradient} rounded-xl p-4 mb-4 relative`}>
-                        <h3 className="text-xl md:text-2xl font-bold mb-1 pr-8">{journal.name}</h3>
-                        <p className="text-sm opacity-90">{journal.topic}</p>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete();
-                            }}
-                            className="absolute top-3 left-3 p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
-                    </div>
-
-                    {/* Progress */}
-                    <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-400">התקדמות</span>
-                            <span className="text-2xl md:text-3xl font-bold text-blue-400">{progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
-                            <div
-                                className={`h-full bg-gradient-to-r ${color.gradient} transition-all duration-500`}
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
-                        <span>{journal.weeksCount} שבועות</span>
-                        <span>{Object.values(journal.tasks).reduce((sum, week) => sum + week.length, 0)} משימות</span>
-                    </div>
-
-                    {/* Open Button */}
-                    <button
-                        onClick={onOpen}
-                        className={`w-full bg-gradient-to-r ${color.gradient} active:opacity-90 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg flex items-center justify-center gap-2 transition-all transform active:scale-95`}
-                    >
-                        פתח יומן
-                        <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-                    </button>
-                </div>
-            );
-        }
-
-        // Create Journal Modal
-        function CreateJournalModal({ onClose, onCreate }) {
-            const [name, setName] = useState('');
-            const [topic, setTopic] = useState('');
-            const [weeksCount, setWeeksCount] = useState(4);
-            const [colorIndex, setColorIndex] = useState(0);
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (name && topic) {
-                    onCreate({ name, topic, weeksCount, colorIndex });
-                }
-            };
-
-            return (
-                <div className="fixed inset-0 bg-black/60 modal-backdrop flex items-center justify-center md:items-center items-end z-50 p-0 md:p-4">
-                    <div className="bg-gray-800 rounded-t-2xl md:rounded-2xl p-6 md:p-8 max-w-md w-full border-t md:border border-gray-700 shadow-2xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl md:text-3xl font-bold">צור יומן חדש</h2>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-lg transition-colors">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-base font-medium mb-2">שם היומן</label>
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="למשל: AI & Automation"
-                                    className="w-full bg-gray-700 rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-base font-medium mb-2">נושא/מטרה</label>
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    placeholder="למשל: למידת פייתון למתחילים"
-                                    className="w-full bg-gray-700 rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-base font-medium mb-3">מספר שבועות: <span className="text-blue-400 text-xl font-bold">{weeksCount}</span></label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="12"
-                                    value={weeksCount}
-                                    onChange={(e) => setWeeksCount(parseInt(e.target.value))}
-                                    className="w-full h-3"
-                                />
-                                <div className="flex justify-between text-sm text-gray-500 mt-2">
-                                    <span>שבוע אחד</span>
-                                    <span>12 שבועות</span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-base font-medium mb-3">בחר צבע</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {colorOptions.map((color, index) => (
-                                        <button
-                                            key={index}
-                                            type="button"
-                                            onClick={() => setColorIndex(index)}
-                                            className={`h-14 md:h-16 rounded-xl bg-gradient-to-r ${color.gradient} ${
-                                                colorIndex === index ? 'ring-4 ring-white' : ''
-                                            } transition-all active:scale-95`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 active:from-blue-700 active:to-purple-700 py-4 rounded-xl font-semibold text-lg transition-all transform active:scale-95"
-                            >
-                                צור יומן
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            );
-        }
-
-        // Journal Dashboard Component
-        function JournalDashboard({ journal, onBack, onUpdate }) {
-            const [tasks, setTasks] = useState(journal.tasks);
-            const [links, setLinks] = useState(journal.links);
-            const [notes, setNotes] = useState(journal.notes);
-            const [showAddLink, setShowAddLink] = useState(false);
-            const [newLinkTitle, setNewLinkTitle] = useState('');
-            const [newLinkUrl, setNewLinkUrl] = useState('');
-            const [newTaskText, setNewTaskText] = useState('');
-            const [savedIndicator, setSavedIndicator] = useState(false);
-
-            const color = colorOptions[journal.colorIndex] || colorOptions[0];
-
-            useEffect(() => {
-                onUpdate({ tasks, links, notes });
-                // Show saved indicator
-                setSavedIndicator(true);
-                const timer = setTimeout(() => setSavedIndicator(false), 1000);
-                return () => clearTimeout(timer);
-            }, [tasks, links, notes]);
-
-            const toggleTask = (week, taskId) => {
-                setTasks(prev => ({
-                    ...prev,
-                    [week]: prev[week].map(task =>
-                        task.id === taskId ? { ...task, completed: !task.completed } : task
-                    )
-                }));
-            };
-
-            const addTask = (week) => {
-                if (newTaskText.trim()) {
-                    setTasks(prev => ({
-                        ...prev,
-                        [week]: [...prev[week], {
-                            id: Date.now(),
-                            text: newTaskText,
-                            completed: false
-                        }]
-                    }));
-                    setNewTaskText('');
-                }
-            };
-
-            const deleteTask = (week, taskId) => {
-                setTasks(prev => ({
-                    ...prev,
-                    [week]: prev[week].filter(t => t.id !== taskId)
-                }));
-            };
-
-            const addLink = () => {
-                if (newLinkTitle && newLinkUrl) {
-                    setLinks([...links, {
-                        id: Date.now(),
-                        title: newLinkTitle,
-                        url: newLinkUrl,
-                        category: 'כללי'
-                    }]);
-                    setNewLinkTitle('');
-                    setNewLinkUrl('');
-                    setShowAddLink(false);
-                }
-            };
-
-            const removeLink = (id) => {
-                setLinks(links.filter(link => link.id !== id));
-            };
-
-            const calculateProgress = () => {
-                let totalTasks = 0;
-                let completedTasks = 0;
-
-                Object.values(tasks).forEach(week => {
-                    totalTasks += week.length;
-                    completedTasks += week.filter(t => t.completed).length;
-                });
-
-                return totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-            };
-
-            const shareWeekSummary = (weekNumber, weekTasks) => {
-                const completedTasks = weekTasks.filter(t => t.completed);
-                const totalTasks = weekTasks.length;
-                const progress = totalTasks === 0 ? 0 : Math.round((completedTasks.length / totalTasks) * 100);
-                
-                let message = `📚 *${journal.name}*\n`;
-                message += `שבוע ${weekNumber} - ${journal.topic}\n\n`;
-                message += `📊 *התקדמות:* ${progress}% (${completedTasks.length}/${totalTasks})\n\n`;
-                
-                if (completedTasks.length > 0) {
-                    message += `✅ *הושלמו:*\n`;
-                    completedTasks.forEach(task => {
-                        message += `• ${task.text}\n`;
-                    });
-                }
-                
-                const incompleteTasks = weekTasks.filter(t => !t.completed);
-                if (incompleteTasks.length > 0) {
-                    message += `\n⏳ *נותרו:*\n`;
-                    incompleteTasks.forEach(task => {
-                        message += `• ${task.text}\n`;
-                    });
-                }
-
-                // WhatsApp share
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white p-4 md:p-8 pb-24 md:pb-8">
-                    <div className="max-w-7xl mx-auto">
-                        {/* Back Button */}
-                        <button
-                            onClick={onBack}
-                            className="flex items-center gap-2 mb-4 md:mb-6 text-gray-400 hover:text-white active:text-white transition-colors py-2"
-                        >
-                            <Home className="w-5 h-5 md:w-6 md:h-6" />
-                            <span className="text-base md:text-lg">חזרה לדף הבית</span>
-                        </button>
-
-                        {/* Header with Save Indicator */}
-                        <div className={`mb-6 md:mb-8 rounded-2xl bg-gradient-to-r ${color.gradient} p-6 md:p-8 shadow-2xl relative`}>
-                            <h1 className="text-3xl md:text-5xl font-bold mb-2">
-                                {journal.name}
-                            </h1>
-                            <p className="text-base md:text-lg opacity-90">{journal.topic}</p>
-                            {savedIndicator && (
-                                <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm flex items-center gap-1 pulse">
-                                    <Check className="w-4 h-4" />
-                                    נשמר
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-6 mb-6 border border-gray-700/50 shadow-xl">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-blue-400" />
-                                    <h2 className="text-lg md:text-xl font-semibold">התקדמות כללית</h2>
-                                </div>
-                                <span className="text-2xl md:text-3xl font-bold text-blue-400">{calculateProgress()}%</span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-3 md:h-4 overflow-hidden">
-                                <div
-                                    className={`h-full bg-gradient-to-r ${color.gradient} transition-all duration-500 rounded-full`}
-                                    style={{ width: `${calculateProgress()}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                            {/* Weekly Checklist */}
-                            <div className="lg:col-span-2 space-y-4">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
-                                    <h2 className="text-xl md:text-2xl font-bold">תכנית לימודים - {journal.weeksCount} שבועות</h2>
-                                </div>
-
-                                {Object.keys(tasks).map((week, index) => (
-                                    <div key={week} className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-gray-700/50 shadow-lg">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg md:text-xl font-semibold text-blue-300 flex items-center gap-2">
-                                                שבוע {index + 1}
-                                                <span className="text-sm text-gray-400">
-                                                    ({tasks[week].filter(t => t.completed).length}/{tasks[week].length})
-                                                </span>
-                                            </h3>
-                                            <button
-                                                onClick={() => shareWeekSummary(index + 1, tasks[week])}
-                                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 active:bg-green-800 px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium transition-colors"
-                                            >
-                                                <Share2 className="w-4 h-4" />
-                                                <span className="hidden md:inline">שתף</span>
-                                            </button>
-                                        </div>
-
-                                        <div className="space-y-2 mb-3">
-                                            {tasks[week].map(task => (
-                                                <div
-                                                    key={task.id}
-                                                    className={`flex items-start gap-3 p-3 md:p-4 rounded-lg group transition-all ${
-                                                        task.completed ? 'bg-green-900/20' : 'bg-gray-700/30'
-                                                    }`}
-                                                >
-                                                    <div 
-                                                        onClick={() => toggleTask(week, task.id)}
-                                                        className="cursor-pointer flex-shrink-0"
-                                                    >
-                                                        {task.completed ? (
-                                                            <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7 text-green-400 mt-0.5" />
-                                                        ) : (
-                                                            <Circle className="w-6 h-6 md:w-7 md:h-7 text-gray-500 mt-0.5" />
-                                                        )}
-                                                    </div>
-                                                    <span 
-                                                        onClick={() => toggleTask(week, task.id)}
-                                                        className={`flex-1 cursor-pointer text-base md:text-lg leading-relaxed ${task.completed ? 'line-through text-gray-400' : 'text-gray-200'}`}
-                                                    >
-                                                        {task.text}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => deleteTask(week, task.id)}
-                                                        className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-600 active:bg-red-700 rounded transition-all flex-shrink-0"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Add Task */}
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={newTaskText}
-                                                onChange={(e) => setNewTaskText(e.target.value)}
-                                                onKeyPress={(e) => e.key === 'Enter' && addTask(week)}
-                                                placeholder="הוסף משימה חדשה..."
-                                                className="flex-1 bg-gray-700/50 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <button
-                                                onClick={() => addTask(week)}
-                                                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg px-4 md:px-5 py-3 font-medium transition-colors flex-shrink-0"
-                                            >
-                                                <Plus className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Sidebar */}
-                            <div className="space-y-4 md:space-y-6">
-                                {/* Quick Links */}
-                                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-gray-700/50 shadow-lg">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <LinkIcon className="w-5 h-5 text-purple-400" />
-                                            <h2 className="text-lg md:text-xl font-semibold">קישורים מהירים</h2>
-                                        </div>
-                                        <button
-                                            onClick={() => setShowAddLink(!showAddLink)}
-                                            className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-lg transition-colors"
-                                        >
-                                            {showAddLink ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-
-                                    {showAddLink && (
-                                        <div className="mb-4 space-y-2">
-                                            <input
-                                                type="text"
-                                                placeholder="שם הקישור"
-                                                value={newLinkTitle}
-                                                onChange={(e) => setNewLinkTitle(e.target.value)}
-                                                className="w-full bg-gray-700 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <input
-                                                type="url"
-                                                placeholder="URL"
-                                                value={newLinkUrl}
-                                                onChange={(e) => setNewLinkUrl(e.target.value)}
-                                                className="w-full bg-gray-700 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <button
-                                                onClick={addLink}
-                                                className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg px-4 py-3 font-medium transition-colors"
-                                            >
-                                                הוסף קישור
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-2">
-                                        {links.map(link => (
-                                            <div key={link.id} className="group flex items-center justify-between gap-2 p-3 md:p-4 bg-gray-700/50 rounded-lg hover:bg-gray-700 active:bg-gray-600 transition-all">
-                                                <a
-                                                    href={link.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex-1 flex items-start gap-2 min-w-0"
-                                                >
-                                                    <LinkIcon className="w-4 h-4 md:w-5 md:h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="text-sm md:text-base font-medium truncate">{link.title}</div>
-                                                        <div className="text-xs text-gray-400">{link.category}</div>
-                                                    </div>
-                                                </a>
-                                                <button
-                                                    onClick={() => removeLink(link.id)}
-                                                    className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-600 active:bg-red-700 rounded transition-all flex-shrink-0"
-                                                >
-                                                    <X className="w-3 h-3 md:w-4 md:h-4" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Daily Notes */}
-                                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-gray-700/50 shadow-lg">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <FileText className="w-5 h-5 text-green-400" />
-                                        <h2 className="text-lg md:text-xl font-semibold">רפלקציה יומית</h2>
-                                    </div>
-                                    <textarea
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        placeholder="מה למדתי היום? מחשבות, תובנות, שאלות..."
-                                        className="w-full h-48 md:h-64 bg-gray-700/50 rounded-lg p-4 text-base resize-none focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                                        {savedIndicator && <Check className="w-3 h-3 text-green-400" />}
-                                        השינויים נשמרים אוטומטית
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        ReactDOM.render(<JournalApp />, document.getElementById('root'));
-    </script>
+    <script src="js/data/words.js"></script>
+    <script src="js/data/categories.js"></script>
+    <script src="js/data/sentences.js"></script>
+    <script src="js/data/relations.js"></script>
+    <script src="js/data/verbs.js"></script>
+    <script src="js/data/ladders.js"></script>
+    <script src="js/data/emojiWords.js"></script>
+    <script src="js/data/idioms.js"></script>
+    <script src="js/data/partsOfSpeech.js"></script>
+    <script src="js/data/reading.js"></script>
+    <script src="js/data/crosswords.js"></script>
+
+    <script src="js/lib/leveling.js"></script>
+    <script src="js/lib/storage.js"></script>
+    <script src="js/lib/gameSession.js"></script>
+
+    <script src="js/games/registry.js"></script>
+
+    <script type="text/babel" src="js/components/Toast.js"></script>
+    <script type="text/babel" src="js/components/AppShell.js"></script>
+    <script type="text/babel" src="js/components/ChoiceQuestion.js"></script>
+    <script type="text/babel" src="js/components/GameMenu.js"></script>
+
+    <script type="text/babel" src="js/games/wordle.js"></script>
+    <script type="text/babel" src="js/games/crossword.js"></script>
+    <script type="text/babel" src="js/games/quartets.js"></script>
+    <script type="text/babel" src="js/games/wordsearch.js"></script>
+    <script type="text/babel" src="js/games/cloze.js"></script>
+    <script type="text/babel" src="js/games/synantonym.js"></script>
+    <script type="text/babel" src="js/games/irregularverbs.js"></script>
+    <script type="text/babel" src="js/games/hangman.js"></script>
+    <script type="text/babel" src="js/games/reverseHangman.js"></script>
+    <script type="text/babel" src="js/games/wordladder.js"></script>
+    <script type="text/babel" src="js/games/anagram.js"></script>
+    <script type="text/babel" src="js/games/typingsprint.js"></script>
+    <script type="text/babel" src="js/games/memory.js"></script>
+    <script type="text/babel" src="js/games/oddoneout.js"></script>
+    <script type="text/babel" src="js/games/emojiguess.js"></script>
+    <script type="text/babel" src="js/games/idioms.js"></script>
+    <script type="text/babel" src="js/games/grammar.js"></script>
+    <script type="text/babel" src="js/games/sentenceorder.js"></script>
+    <script type="text/babel" src="js/games/speedtranslate.js"></script>
+    <script type="text/babel" src="js/games/truefalse.js"></script>
+    <script type="text/babel" src="js/games/partofspeech.js"></script>
+    <script type="text/babel" src="js/games/reading.js"></script>
+
+    <script type="text/babel" src="js/app.js"></script>
 </body>
 </html>
