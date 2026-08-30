@@ -16,6 +16,7 @@ function createDefaultProfile() {
       guessDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
     },
     playedWords: [],
+    playedItems: {},
     history: [],
     lastPlayedAt: null,
   };
@@ -27,6 +28,7 @@ function getProfile() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object" && typeof parsed.skill === "number") {
+        if (!parsed.playedItems) parsed.playedItems = {}; // migrate profiles saved before multi-game support
         return parsed;
       }
     }
@@ -46,7 +48,10 @@ function saveProfile(profile) {
   }
 }
 
-// roundInfo: { won, guesses, timeSeconds, word, difficulty }
+// roundInfo: { won, guesses?, timeSeconds, word?, difficulty, gameId?, itemId? }
+// - guesses: only Wordle-shaped rounds set this; guessDistribution stays meaningful only for those.
+// - word: legacy Wordle field, feeds the original playedWords/pickWord anti-repeat list.
+// - gameId/itemId: every other game's anti-repeat list, keyed by game (see js/lib/gameSession.js).
 // levelingResult: { skillAfter, bandAfter, bandChanged, delta } (see js/lib/leveling.js)
 function recordRound(profile, roundInfo, levelingResult) {
   const stats = { ...profile.stats };
@@ -56,13 +61,20 @@ function recordRound(profile, roundInfo, levelingResult) {
     stats.gamesWon += 1;
     stats.currentStreak += 1;
     stats.bestStreak = Math.max(stats.bestStreak, stats.currentStreak);
-    stats.guessDistribution[roundInfo.guesses] = (stats.guessDistribution[roundInfo.guesses] || 0) + 1;
+    if (roundInfo.guesses != null) {
+      stats.guessDistribution[roundInfo.guesses] = (stats.guessDistribution[roundInfo.guesses] || 0) + 1;
+    }
   } else {
     stats.currentStreak = 0;
   }
 
+  const gameId = roundInfo.gameId || "wordle";
+  const itemId = roundInfo.itemId || roundInfo.word;
+
   const historyEntry = {
     date: new Date().toISOString(),
+    gameId,
+    itemId,
     word: roundInfo.word,
     difficulty: roundInfo.difficulty,
     won: roundInfo.won,
@@ -75,9 +87,17 @@ function recordRound(profile, roundInfo, levelingResult) {
   };
   const history = [...profile.history, historyEntry].slice(-ZIKKIT_HISTORY_LIMIT);
 
-  const playedWords = profile.playedWords.includes(roundInfo.word)
-    ? profile.playedWords
-    : [...profile.playedWords, roundInfo.word];
+  const playedWords = roundInfo.word && !profile.playedWords.includes(roundInfo.word)
+    ? [...profile.playedWords, roundInfo.word]
+    : profile.playedWords;
+
+  const playedItems = { ...profile.playedItems };
+  if (itemId) {
+    const list = playedItems[gameId] || [];
+    if (!list.includes(itemId)) {
+      playedItems[gameId] = [...list, itemId];
+    }
+  }
 
   return {
     ...profile,
@@ -85,6 +105,7 @@ function recordRound(profile, roundInfo, levelingResult) {
     band: levelingResult.bandAfter,
     stats,
     playedWords,
+    playedItems,
     history,
     lastPlayedAt: historyEntry.date,
   };

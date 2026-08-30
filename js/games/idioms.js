@@ -1,0 +1,67 @@
+// Zikkit — השלמת ניבים (complete the idiom, then reveal its Hebrew meaning).
+function IdiomsGame({ profile, onProfileUpdate }) {
+  const buildRound = () => {
+    const band = bandForSkill(profile.skill);
+    const item = pickItem(IDIOMS, profile, "idioms");
+    const bandPool = IDIOMS.filter((i) => i.difficulty === band && i.id !== item.id);
+    const distractors = shuffle(bandPool)
+      .slice(0, 3)
+      .map((i) => i.answer);
+    const options = shuffle([item.answer, ...distractors]);
+    return { item, options, correctIndex: options.indexOf(item.answer) };
+  };
+
+  const [round, setRound] = React.useState(buildRound);
+  const [selected, setSelected] = React.useState(null);
+  const [answered, setAnswered] = React.useState(false);
+  const [levelChange, setLevelChange] = React.useState(null);
+  const startTimeRef = React.useRef(Date.now());
+
+  const handleAnswer = (index) => {
+    if (answered) return;
+    setSelected(index);
+    setAnswered(true);
+    const won = index === round.correctIndex;
+    const timeSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+    const { levelChange: change } = finishGame({
+      profile, onProfileUpdate, gameId: "idioms", won,
+      attempts: 1, maxAttempts: 1, timeSeconds,
+      itemId: round.item.id, difficulty: round.item.difficulty,
+    });
+    setLevelChange(change);
+  };
+
+  const next = () => {
+    startTimeRef.current = Date.now();
+    setRound(buildRound());
+    setSelected(null);
+    setAnswered(false);
+    setLevelChange(null);
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center gap-6" dir="rtl">
+      <p className="text-gray-400 text-sm text-center max-w-md">השלימו את הניב באנגלית</p>
+      <ChoiceQuestion
+        prompt={round.item.idiom}
+        promptDir="ltr"
+        options={round.options}
+        onAnswer={handleAnswer}
+        disabled={answered}
+        correctIndex={round.correctIndex}
+        selectedIndex={selected}
+      />
+      {answered && (
+        <div className="w-full max-w-md bg-gray-800/60 rounded-xl p-4 text-center">
+          <p className="text-teal-300 mb-3">{round.item.meaning}</p>
+          {levelChange && <p className="text-sm text-purple-300 mb-2">{levelChange === "up" ? "עלית רמה! 🚀" : "התאמנו לך רמה קלה יותר 💪"}</p>}
+          <button onClick={next} className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 px-6 py-3 rounded-xl font-semibold transition-all transform active:scale-95">
+            ניב הבא
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+registerGame({ id: "idioms", label: "השלמת ניבים", icon: "💬", category: "vocab", component: IdiomsGame });

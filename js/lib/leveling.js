@@ -7,11 +7,13 @@ const SKILL_START = 50; // first-ever visit => bandForSkill(50) === "intermediat
 
 const BAND_THRESHOLDS = { beginnerMax: 35, intermediateMax: 70 }; // > intermediateMax => advanced
 
-const SOLVE_SCORE = { 1: 18, 2: 15, 3: 12, 4: 8, 5: 4, 6: 1 }; // keyed by guesses used to win
-const FAIL_SCORE = -10; // used all 6 guesses without solving
+const SOLVE_SCORE = { 1: 18, 2: 15, 3: 12, 4: 8, 5: 4, 6: 1 }; // legacy Wordle table, keyed by guesses (maxAttempts===6)
+const FAIL_SCORE = -10; // used all attempts without solving
+const MIN_ROUND_SCORE = 1;
+const MAX_ROUND_SCORE = 18;
 
-const TIME_BONUS_FAST = 2; // avg < 15s/guess
-const TIME_PENALTY_SLOW = -2; // avg > 45s/guess
+const TIME_BONUS_FAST = 2; // avg < 15s/attempt
+const TIME_PENALTY_SLOW = -2; // avg > 45s/attempt
 
 const BAND_LABELS = { beginner: "מתחילים", intermediate: "בינוני", advanced: "מתקדמים" };
 
@@ -25,15 +27,25 @@ function bandForSkill(skill) {
   return "advanced";
 }
 
-// roundResult: { won, guessesUsed, timeSeconds }
-function scoreRound(roundResult) {
-  const { won, guessesUsed, timeSeconds } = roundResult;
-  const base = won ? SOLVE_SCORE[guessesUsed] : FAIL_SCORE;
+// Wordle (maxAttempts===6) keeps its exact legacy table; every other game (any other
+// maxAttempts) scores by efficiency = how few of its attempts were used.
+function scoreForAttempts(attempts, maxAttempts) {
+  if (maxAttempts === 6 && SOLVE_SCORE[attempts] !== undefined) {
+    return SOLVE_SCORE[attempts];
+  }
+  const efficiency = clamp(1 - (attempts - 1) / Math.max(1, maxAttempts - 1), 0, 1);
+  return Math.round(MIN_ROUND_SCORE + efficiency * (MAX_ROUND_SCORE - MIN_ROUND_SCORE));
+}
 
-  const avgSecPerGuess = timeSeconds / guessesUsed;
+// roundResult: { won, attempts, maxAttempts, timeSeconds }
+function scoreRound(roundResult) {
+  const { won, attempts, maxAttempts, timeSeconds } = roundResult;
+  const base = won ? scoreForAttempts(attempts, maxAttempts) : FAIL_SCORE;
+
+  const avgSecPerAttempt = timeSeconds / attempts;
   let timeModifier = 0;
-  if (avgSecPerGuess < 15) timeModifier = TIME_BONUS_FAST;
-  else if (avgSecPerGuess > 45) timeModifier = TIME_PENALTY_SLOW;
+  if (avgSecPerAttempt < 15) timeModifier = TIME_BONUS_FAST;
+  else if (avgSecPerAttempt > 45) timeModifier = TIME_PENALTY_SLOW;
 
   return clamp(base + timeModifier, -12, 20);
 }

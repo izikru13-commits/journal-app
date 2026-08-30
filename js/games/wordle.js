@@ -160,17 +160,20 @@ function WordleGame({ profile, onProfileUpdate }) {
 
   const finishRound = (won, guessesUsed) => {
     const timeSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
-    const roundResult = { won, guessesUsed, timeSeconds };
-    const levelingResult = updateProfileAfterRound(profile, roundResult);
-    const updatedProfile = recordRound(
+    const { levelChange } = finishGame({
       profile,
-      { ...roundResult, guesses: guessesUsed, word: target.word, difficulty: target.difficulty },
-      levelingResult
-    );
-    saveProfile(updatedProfile);
-    onProfileUpdate(updatedProfile);
+      onProfileUpdate,
+      gameId: "wordle",
+      won,
+      attempts: guessesUsed,
+      maxAttempts: MAX_GUESSES,
+      timeSeconds,
+      itemId: target.word,
+      difficulty: target.difficulty,
+      word: target.word,
+    });
     setStatus(won ? "won" : "lost");
-    setLevelChange(levelingResult.bandChanged ? (levelingResult.delta > 0 ? "up" : "down") : null);
+    setLevelChange(levelChange);
   };
 
   const handleKey = (key) => {
@@ -261,3 +264,5 @@ function WordleGame({ profile, onProfileUpdate }) {
     </div>
   );
 }
+
+registerGame({ id: "wordle", label: "וורדל", icon: "🔤", category: "spelling", component: WordleGame });

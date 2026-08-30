@@ -5,7 +5,7 @@ const BAND_BADGE_STYLES = {
   advanced: "bg-purple-600",
 };
 
-function AppShell({ profile, children }) {
+function AppShell({ profile, children, activeGame, onHome }) {
   const band = profile.band;
 
   return (
@@ -22,6 +22,19 @@ function AppShell({ profile, children }) {
           <span>{BAND_LABELS[band] || band}</span>
         </div>
       </header>
+
+      {activeGame && (
+        <div className="px-4 mb-2 flex justify-center" dir="rtl">
+          <button
+            onClick={onHome}
+            className="flex items-center gap-2 text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-700 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+          >
+            <span>◀ חזרה למשחקים</span>
+            <span className="text-gray-500">|</span>
+            <span>{activeGame.icon} {activeGame.label}</span>
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col items-center px-4 pb-12">{children}</main>
 
