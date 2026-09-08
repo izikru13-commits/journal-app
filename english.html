@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="description" content="אתר אינטראקטיבי ללימוד אנגלית מאפס - אלפבית, צלילים, מילים ומשפטים">
+    <title>לומדים אנגלית מאפס 🌟</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Lexend:wght@400;500;600;700;800&display=swap');
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Heebo', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* כל טקסט באנגלית מקבל פונט קריא במיוחד וכיוון LTR */
+        .en {
+            font-family: 'Lexend', 'Heebo', sans-serif;
+            direction: ltr;
+            unicode-bidi: isolate;
+            letter-spacing: 0.02em;
+        }
+
+        /* יעדי מגע נוחים לילד/מתחיל */
+        button, a, input {
+            min-height: 44px;
+        }
+
+        button {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .card-press {
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .card-press:active {
+            transform: scale(0.95);
+        }
+
+        @media (min-width: 768px) {
+            .card-press:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.18);
+            }
+        }
+
+        /* --- אנימציות משוב --- */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%, 120%); }
+            to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .toast { animation: slideUp 0.3s ease-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        @keyframes popIn {
+            0%   { transform: scale(0.4); opacity: 0; }
+            60%  { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: popIn 0.35s ease-out; }
+
+        @keyframes successFlash {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .success-flash { animation: successFlash 0.45s ease-out; }
+
+        @keyframes speakPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+            50%      { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+        .speaking { animation: speakPulse 1s ease-out infinite; }
+
+        @keyframes floatUp {
+            0%   { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-70px) scale(1.6); opacity: 0; }
+        }
+        .float-up { animation: floatUp 0.9s ease-out forwards; }
+
+        @keyframes sheetUp {
+            from { transform: translateY(100%); }
+            to   { transform: translateY(0); }
+        }
+        @media (max-width: 767px) {
+            .sheet { animation: sheetUp 0.28s ease-out; }
+        }
+
+        /* גלילה אופקית נקייה בסרגל השלבים */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+        /* =====================================================================
+           נתונים — מקור האמת של שלב 1
+           sound = קירוב פונטי באנגלית שמנוע ההקראה יודע לבטא (הצליל, לא שם האות)
+           ===================================================================== */
+        const ALPHABET = [
+            { upper: 'A', lower: 'a', name: 'A', sound: 'ah',   word: 'Apple',    emoji: '🍎', he: 'תפוח' },
+            { upper: 'B', lower: 'b', name: 'B', sound: 'buh',  word: 'Ball',     emoji: '⚽', he: 'כדור' },
+            { upper: 'C', lower: 'c', name: 'C', sound: 'kuh',  word: 'Cat',      emoji: '🐱', he: 'חתול' },
+            { upper: 'D', lower: 'd', name: 'D', sound: 'duh',  word: 'Dog',      emoji: '🐶', he: 'כלב' },
+            { upper: 'E', lower: 'e', name: 'E', sound: 'eh',   word: 'Egg',      emoji: '🥚', he: 'ביצה' },
+            { upper: 'F', lower: 'f', name: 'F', sound: 'ff',   word: 'Fish',     emoji: '🐟', he: 'דג' },
+            { upper: 'G', lower: 'g', name: 'G', sound: 'guh',  word: 'Girl',     emoji: '👧', he: 'ילדה' },
+            { upper: 'H', lower: 'h', name: 'H', sound: 'huh',  word: 'Hat',      emoji: '🎩', he: 'כובע' },
+            { upper: 'I', lower: 'i', name: 'I', sound: 'ih',   word: 'Ice',      emoji: '🧊', he: 'קרח' },
+            { upper: 'J', lower: 'j', name: 'J', sound: 'juh',  word: 'Juice',    emoji: '🧃', he: 'מיץ' },
+            { upper: 'K', lower: 'k', name: 'K', sound: 'kuh',  word: 'Key',      emoji: '🔑', he: 'מפתח' },
+            { upper: 'L', lower: 'l', name: 'L', sound: 'lll',  word: 'Lion',     emoji: '🦁', he: 'אריה' },
+            { upper: 'M', lower: 'm', name: 'M', sound: 'mmm',  word: 'Moon',     emoji: '🌙', he: 'ירח' },
+            { upper: 'N', lower: 'n', name: 'N', sound: 'nnn',  word: 'Nose',     emoji: '👃', he: 'אף' },
+            { upper: 'O', lower: 'o', name: 'O', sound: 'oh',   word: 'Orange',   emoji: '🍊', he: 'תפוז' },
+            { upper: 'P', lower: 'p', name: 'P', sound: 'puh',  word: 'Pen',      emoji: '🖊️', he: 'עט' },
+            { upper: 'Q', lower: 'q', name: 'Q', sound: 'kwuh', word: 'Queen',    emoji: '👑', he: 'מלכה' },
+            { upper: 'R', lower: 'r', name: 'R', sound: 'rrr',  word: 'Rain',     emoji: '🌧️', he: 'גשם' },
+            { upper: 'S', lower: 's', name: 'S', sound: 'sss',  word: 'Sun',      emoji: '☀️', he: 'שמש' },
+            { upper: 'T', lower: 't', name: 'T', sound: 'tuh',  word: 'Tree',     emoji: '🌳', he: 'עץ' },
+            { upper: 'U', lower: 'u', name: 'U', sound: 'uh',   word: 'Umbrella', emoji: '☂️', he: 'מטרייה' },
+            { upper: 'V', lower: 'v', name: 'V', sound: 'vvv',  word: 'Violin',   emoji: '🎻', he: 'כינור' },
+            { upper: 'W', lower: 'w', name: 'W', sound: 'wuh',  word: 'Water',    emoji: '💧', he: 'מים' },
+            { upper: 'X', lower: 'x', name: 'X', sound: 'ks',   word: 'Box',      emoji: '📦', he: 'קופסה', note: 'הצליל של X נמצא בסוף המילה' },
+            { upper: 'Y', lower: 'y', name: 'Y', sound: 'yuh',  word: 'Yellow',   emoji: '💛', he: 'צהוב' },
+            { upper: 'Z', lower: 'z', name: 'Z', sound: 'zzz',  word: 'Zebra',    emoji: '🦓', he: 'זברה' }
+        ];
+
+        const STAGES = [
+            { id: 1, title: 'האותיות והצלילים', short: 'אותיות',  emoji: '🔤', desc: 'מכירים את 26 האותיות של האנגלית, איך קוראים להן ואיזה צליל כל אחת עושה.', ready: true },
+            { id: 2, title: 'קוראים מילים קצרות', short: 'מילים',  emoji: '🔠', desc: 'מחברים שלוש אותיות למילה: Cat, Dog, Sun. מפרקים כל מילה לצלילים וקוראים אותה יחד.', ready: false },
+            { id: 3, title: 'אוצר מילים בתמונות', short: 'אוצר מילים', emoji: '🖼️', desc: 'כרטיסיות לימוד עם תמונות: צבעים, מספרים, חיות, משפחה וחפצים בבית.', ready: false },
+            { id: 4, title: 'קוראים משפטים',      short: 'משפטים', emoji: '📖', desc: 'משפטים קצרים ושימושיים. כל מילה לחיצה — ואפשר לשמוע את כל המשפט לאט.', ready: false },
+            { id: 5, title: 'משחקים ותרגול',      short: 'משחקים', emoji: '🎮', desc: 'חידונים, השלמת אותיות חסרות וצבירת כוכבים על כל תשובה נכונה.', ready: false }
+        ];
+
+        const PRAISE = ['כל הכבוד! 🎉', 'מעולה! ⭐', 'יפה מאוד! 👏', 'נכון מאוד! 🌟', 'אלוף! 💪', 'מדהים! 🚀'];
+        const randomPraise = () => PRAISE[Math.floor(Math.random() * PRAISE.length)];
+
+        const shuffle = (arr) => {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        };
+
+        const sample = (arr, n) => shuffle(arr).slice(0, n);
+
+        /* =====================================================================
+           שמע
+           ===================================================================== */
+
+        // צליל הצלחה ללא קבצים חיצוניים — ארפג'ו קצר ועליז דרך Web Audio API
+        let audioCtx = null;
+        function playSuccessTone() {
+            try {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return;
+                if (!audioCtx) audioCtx = new Ctx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    const start = now + i * 0.09;
+                    gain.gain.setValueAtTime(0.0001, start);
+                    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(start);
+                    osc.stop(start + 0.3);
+                });
+            } catch (e) { /* שמע לא זמין — לא שוברים את האפליקציה */ }
+        }
+
+        // hook להקראה באנגלית: בחירת קול אנגלי, ביטול תור, וקצב איטי למתחילים
+        function useSpeech() {
+            const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+            const [voice, setVoice] = useState(null);
+            const [speakingKey, setSpeakingKey] = useState(null);
+            const utterRef = useRef(null);
+
+            useEffect(() => {
+                if (!supported) return;
+                const synth = window.speechSynthesis;
+
+                const pickVoice = () => {
+                    const voices = synth.getVoices() || [];
+                    const en = voices.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith('en'));
+                    if (!en.length) return false;
+                    const isUS = v => /^en[-_]us/i.test(v.lang || '');
+                    const chosen =
+                        en.find(v => isUS(v) && /samantha|google us english|zira|aria/i.test(v.name || '')) ||
+                        en.find(isUS) ||
+                        en.find(v => /^en[-_]gb/i.test(v.lang || '')) ||
+                        en[0];
+                    setVoice(chosen);
+                    return true;
+                };
+
+                if (!pickVoice()) {
+                    // כרום מחזיר רשימה ריקה בקריאה הראשונה — מחכים לאירוע וגם מנסים שוב
+                    synth.addEventListener('voiceschanged', pickVoice);
+                    const retries = [200, 600, 1500].map(ms => setTimeout(pickVoice, ms));
+                    return () => {
+                        synth.removeEventListener('voiceschanged', pickVoice);
+                        retries.forEach(clearTimeout);
+                    };
+                }
+            }, [supported]);
+
+            const speak = useCallback((text, options) => {
+                const opts = options || {};
+                if (!supported || !text) return;
+                const synth = window.speechSynthesis;
+                try { synth.cancel(); } catch (e) { /* noop */ }
+                const utter = new SpeechSynthesisUtterance(String(text));
+                if (voice) utter.voice = voice;
+                utter.lang = (voice && voice.lang) || 'en-US';
+                utter.rate = typeof opts.rate === 'number' ? opts.rate : 0.8;
+                utter.pitch = 1;
+                utter.volume = 1;
+                const key = opts.key || String(text);
+                utter.onstart = () => setSpeakingKey(key);
+                utter.onend = () => setSpeakingKey(null);
+                utter.onerror = () => setSpeakingKey(null);
+                utterRef.current = utter;
+                try { synth.speak(utter); } catch (e) { setSpeakingKey(null); }
+            }, [supported, voice]);
+
+            // ספארי בנייד חוסם הקראה שלא נובעת ממגע ישיר — משחררים בלחיצה הראשונה
+            const unlock = useCallback(() => {
+                if (!supported) return;
+                try {
+                    const u = new SpeechSynthesisUtterance(' ');
+                    u.volume = 0;
+                    window.speechSynthesis.speak(u);
+                } catch (e) { /* noop */ }
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (Ctx && !audioCtx) audioCtx = new Ctx();
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                } catch (e) { /* noop */ }
+            }, [supported]);
+
+            useEffect(() => () => {
+                if (supported) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+            }, [supported]);
+
+            return { speak, unlock, supported, speakingKey, voiceReady: !!voice };
+        }
+
+        /* =====================================================================
+           רכיבי ממשק משותפים
+           ===================================================================== */
+
+        const IconSpeaker = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15.536 8.464a5 5 0 010 7.072M17.95 6.05a8 8 0 010 11.9M5 9v6h4l5 4V5L9 9H5z" />
+            </svg>
+        );
+
+        const IconStar = ({ className }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.367 2.446a1 1 0 00-.363 1.118l1.286 3.957c.3.921-.755 1.688-1.538 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.783.57-1.838-.197-1.538-1.118l1.286-3.957a1 1 0 00-.363-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
+            </svg>
+        );
+
+        const IconCheck = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+        );
+
+        const IconClose = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        );
+
+        const IconHome = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+        );
+
+        function Toast({ message, show, onClose }) {
+            useEffect(() => {
+                if (!show) return;
+                const t = setTimeout(onClose, 1800);
+                return () => clearTimeout(t);
+            }, [show, message, onClose]);
+
+            if (!show) return null;
+            return (
+                <div className="toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white
+                                px-6 py-3 rounded-2xl shadow-lg text-lg font-bold pointer-events-none">
+                    {message}
+                </div>
+            );
+        }
+
+        // כפתור השמעה גדול ומתויג בעברית
+        function SpeakButton({ label, hint, onClick, color, active }) {
+            const palette = {
+                blue:   'bg-blue-500 hover:bg-blue-600 text-white',
+                violet: 'bg-violet-500 hover:bg-violet-600 text-white',
+                amber:  'bg-amber-500 hover:bg-amber-600 text-white'
+            };
+            return (
+                <button
+                    onClick={onClick}
+                    className={`card-press flex-1 min-w-[120px] rounded-2xl px-4 py-3 shadow-md
+                                flex flex-col items-center justify-center gap-1
+                                ${palette[color] || palette.blue} ${active ? 'speaking' : ''}`}
+                >
+                    <IconSpeaker className="w-6 h-6" />
+                    <span className="text-base font-bold leading-tight">{label}</span>
+                    {hint && <span className="en text-xs opacity-90">{hint}</span>}
+                </button>
+            );
+        }
+
+        function ProgressBar({ value, max, label }) {
+            const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+            return (
+                <div className="w-full">
+                    <div className="flex items-center justify-between text-xs md:text-sm text-slate-500 mb-1">
+                        <span>{label}</span>
+                        <span dir="ltr" className="font-bold text-slate-700">{value} / {max}</span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-l from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: pct + '%' }}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
+        function Header({ stars, learnedCount, onHome }) {
+            return (
+                <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+                    <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+                        <button
+                            onClick={onHome}
+                            aria-label="חזרה למסך הבית"
+                            className="card-press shrink-0 w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200
+                                       flex items-center justify-center text-slate-600"
+                        >
+                            <IconHome className="w-6 h-6" />
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                            <ProgressBar value={learnedCount} max={ALPHABET.length} label="אותיות שלמדת" />
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1 bg-amber-100 text-amber-700
+                                        px-3 py-2 rounded-xl font-extrabold text-lg">
+                            <IconStar className="w-5 h-5" />
+                            <span>{stars}</span>
+                        </div>
+                    </div>
+                </header>
+            );
+        }
+
+        function StageNav({ current, onSelect }) {
+            return (
+                <nav className="max-w-5xl mx-auto px-4 pt-4">
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {STAGES.map(stage => {
+                            const active = current === stage.id;
+                            return (
+                                <button
+                                    key={stage.id}
+                                    onClick={() => onSelect(stage.id)}
+                                    className={`card-press shrink-0 rounded-2xl px-4 py-2 border-2 flex items-center gap-2
+                                                ${active
+                                                    ? 'bg-blue-500 border-blue-500 text-white shadow-md'
+                                                    : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}
+                                >
+                                    <span className="text-xl">{stage.emoji}</span>
+                                    <span className="font-bold whitespace-nowrap">{stage.id}. {stage.short}</span>
+                                    {!stage.ready && (
+                                        <span className={`text-[11px] px-1.5 py-0.5 rounded-md
+                                                          ${active ? 'bg-white/25' : 'bg-slate-100 text-slate-500'}`}>
+                                            בקרוב
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </nav>
+            );
+        }
+
+        function ComingSoon({ stage }) {
+            return (
+                <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+                    <div className="text-7xl mb-4">{stage.emoji}</div>
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-3">
+                        שלב {stage.id}: {stage.title}
+                    </h2>
+                    <p className="text-lg text-slate-600 leading-relaxed mb-8">{stage.desc}</p>
+                    <div className="inline-block bg-amber-50 border-2 border-amber-200 text-amber-800
+                                    rounded-2xl px-6 py-4 text-lg font-bold">
+                        🚧 השלב הזה עדיין בבנייה
+                    </div>
+                    <p className="mt-6 text-slate-500">
+                        בינתיים כדאי להתאמן בשלב 1 — האותיות הן הבסיס לכל השאר.
+                    </p>
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           שלב 1 — האלפבית והצלילים
+           ===================================================================== */
+
+        function LetterCard({ letter, learned, speaking, onClick }) {
+            return (
+                <button
+                    onClick={onClick}
+                    aria-label={`האות ${letter.upper}`}
+                    className={`card-press relative aspect-square rounded-2xl border-2 bg-white
+                                flex flex-col items-center justify-center shadow-sm
+                                ${speaking ? 'border-blue-400 speaking' : learned ? 'border-emerald-300' : 'border-slate-200'}`}
+                >
+                    {learned && (
+                        <span className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-emerald-500
+                                         text-white flex items-center justify-center">
+                            <IconCheck className="w-3.5 h-3.5" />
+                        </span>
+                    )}
+                    <span className="en text-3xl md:text-4xl font-extrabold text-slate-800 leading-none">
+                        {letter.upper}{letter.lower}
+                    </span>
+                    <span className="text-xl md:text-2xl mt-1">{letter.emoji}</span>
+                </button>
+            );
+        }
+
+        function LetterDetail({ index, onIndexChange, onClose, speak, speakingKey }) {
+            const letter = ALPHABET[index];
+
+            const say = (text, rate) => speak(text, { rate: rate, key: 'detail-' + text });
+
+            // ניווט בין אותיות גם במקלדת
+            useEffect(() => {
+                const onKey = (e) => {
+                    if (e.key === 'Escape') onClose();
+                    if (e.key === 'ArrowRight' && index > 0) onIndexChange(index - 1);
+                    if (e.key === 'ArrowLeft' && index < ALPHABET.length - 1) onIndexChange(index + 1);
+                };
+                window.addEventListener('keydown', onKey);
+                return () => window.removeEventListener('keydown', onKey);
+            }, [index, onClose, onIndexChange]);
+
+            return (
+                <div
+                    className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm flex items-end md:items-center justify-center"
+                    onClick={onClose}
+                >
+                    <div
+                        className="sheet bg-white w-full md:max-w-lg md:rounded-3xl rounded-t-3xl p-6 shadow-2xl
+                                   max-h-[92vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-slate-400">
+                                אות {index + 1} מתוך {ALPHABET.length}
+                            </span>
+                            <button
+                                onClick={onClose}
+                                aria-label="סגירה"
+                                className="card-press w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200
+                                           flex items-center justify-center text-slate-500"
+                            >
+                                <IconClose className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="text-center mb-6">
+                            <div className="en text-7xl md:text-8xl font-extrabold text-slate-800 leading-none mb-4">
+                                {letter.upper}{letter.lower}
+                            </div>
+                            <div className="text-6xl mb-3 pop-in" key={letter.upper}>{letter.emoji}</div>
+                            <div className="en text-4xl font-bold text-blue-600">{letter.word}</div>
+                            <div className="text-xl text-slate-500 mt-1">{letter.he}</div>
+                            {letter.note && (
+                                <div className="mt-3 inline-block bg-amber-50 text-amber-700 text-sm
+                                                px-3 py-1.5 rounded-lg">
+                                    💡 {letter.note}
+                                </div>
+                            )}
+                        </div>
+
+                        <p className="text-center text-slate-500 mb-3">לחץ כדי לשמוע:</p>
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            <SpeakButton
+                                label="שם האות"
+                                hint={letter.name}
+                                color="blue"
+                                active={speakingKey === 'detail-' + letter.name}
+                                onClick={() => say(letter.name, 0.7)}
+                            />
+                            <SpeakButton
+                                label="הצליל"
+                                hint={letter.sound}
+                                color="violet"
+                                active={speakingKey === 'detail-' + letter.sound}
+                                onClick={() => say(letter.sound, 0.7)}
+                            />
+                            <SpeakButton
+                                label="המילה"
+                                hint={letter.word}
+                                color="amber"
+                                active={speakingKey === 'detail-' + letter.word}
+                                onClick={() => say(letter.word, 0.8)}
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => onIndexChange(index - 1)}
+                                disabled={index === 0}
+                                className="card-press flex-1 rounded-2xl py-3 font-bold bg-slate-100 text-slate-700
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                → הקודמת
+                            </button>
+                            <button
+                                onClick={() => onIndexChange(index + 1)}
+                                disabled={index === ALPHABET.length - 1}
+                                className="card-press flex-1 rounded-2xl py-3 font-bold bg-slate-100 text-slate-700
+                                           disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                הבאה ←
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AlphabetGrid({ speak, speakingKey, learned, onLearn }) {
+            const [openIndex, setOpenIndex] = useState(null);
+
+            const openLetter = (i) => {
+                const letter = ALPHABET[i];
+                setOpenIndex(i);
+                onLearn(letter.upper);
+                speak(letter.name, { rate: 0.7, key: 'grid-' + letter.upper });
+            };
+
+            const changeIndex = (i) => {
+                if (i < 0 || i >= ALPHABET.length) return;
+                const letter = ALPHABET[i];
+                setOpenIndex(i);
+                onLearn(letter.upper);
+                speak(letter.name, { rate: 0.7, key: 'detail-' + letter.name });
+            };
+
+            return (
+                <div>
+                    <p className="text-center text-slate-600 text-lg mb-4">
+                        לחץ על כל אות כדי לשמוע איך קוראים לה 👇
+                    </p>
+                    <div dir="ltr" className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 md:gap-3">
+                        {ALPHABET.map((letter, i) => (
+                            <LetterCard
+                                key={letter.upper}
+                                letter={letter}
+                                learned={learned.includes(letter.upper)}
+                                speaking={speakingKey === 'grid-' + letter.upper}
+                                onClick={() => openLetter(i)}
+                            />
+                        ))}
+                    </div>
+
+                    {openIndex !== null && (
+                        <LetterDetail
+                            index={openIndex}
+                            onIndexChange={changeIndex}
+                            onClose={() => setOpenIndex(null)}
+                            speak={speak}
+                            speakingKey={speakingKey}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           שלב 1 — משחק א': התאמת אות גדולה לקטנה
+           ===================================================================== */
+
+        function GameMatchCase({ speak, onCorrect, showToast }) {
+            const [round, setRound] = useState(() => sample(ALPHABET, 4));
+            const [lowers, setLowers] = useState(() => []);
+            const [selected, setSelected] = useState(null);
+            const [matched, setMatched] = useState([]);
+            const [wrongKey, setWrongKey] = useState(null);
+
+            // בכל סבב חדש: מערבבים מחדש את האותיות הקטנות ומאפסים את המצב
+            useEffect(() => {
+                setLowers(shuffle(round));
+                setSelected(null);
+                setMatched([]);
+                setWrongKey(null);
+            }, [round]);
+
+            const newRound = useCallback(() => setRound(sample(ALPHABET, 4)), []);
+
+            // כשכל הארבע הותאמו — סבב חדש אוטומטית
+            useEffect(() => {
+                if (matched.length === 4) {
+                    showToast('סיימת את הסבב! 🎊');
+                    const t = setTimeout(newRound, 1400);
+                    return () => clearTimeout(t);
+                }
+            }, [matched, newRound, showToast]);
+
+            const flashWrong = (key) => {
+                setWrongKey(key);
+                setTimeout(() => setWrongKey(null), 450);
+                setSelected(null);
+            };
+
+            const clickUpper = (letter) => {
+                if (matched.includes(letter.upper)) return;
+                setSelected(letter.upper);
+                speak(letter.name, { rate: 0.7, key: 'match-' + letter.upper });
+            };
+
+            const clickLower = (letter) => {
+                if (matched.includes(letter.upper)) return;
+                if (!selected) {
+                    speak(letter.name, { rate: 0.7, key: 'match-l-' + letter.upper });
+                    return;
+                }
+                if (selected === letter.upper) {
+                    setMatched(prev => prev.concat(letter.upper));
+                    setSelected(null);
+                    playSuccessTone();
+                    onCorrect();
+                    showToast(randomPraise());
+                    speak(letter.name, { rate: 0.7, key: 'match-ok-' + letter.upper });
+                } else {
+                    flashWrong('low-' + letter.upper);
+                }
+            };
+
+            const cellClass = (isMatched, isSelected, isWrong) => {
+                if (isMatched) return 'bg-emerald-100 border-emerald-400 text-emerald-700 success-flash';
+                if (isWrong) return 'bg-rose-100 border-rose-400 text-rose-700 shake';
+                if (isSelected) return 'bg-blue-500 border-blue-500 text-white scale-105';
+                return 'bg-white border-slate-200 text-slate-800';
+            };
+
+            return (
+                <div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5 text-center">
+                        <p className="text-lg font-bold text-blue-900 mb-1">איך משחקים?</p>
+                        <p className="text-slate-600">
+                            לחץ קודם על אות <b>גדולה</b> בטור הימני, ואז על אותה אות <b>קטנה</b> בטור השמאלי.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 md:gap-6 max-w-xl mx-auto">
+                        <div>
+                            <h3 className="text-center font-bold text-slate-500 mb-2">אותיות גדולות</h3>
+                            <div className="space-y-3">
+                                {round.map(letter => (
+                                    <button
+                                        key={'u-' + letter.upper}
+                                        onClick={() => clickUpper(letter)}
+                                        className={`card-press w-full h-20 rounded-2xl border-2 en text-4xl font-extrabold
+                                                    ${cellClass(matched.includes(letter.upper), selected === letter.upper, false)}`}
+                                    >
+                                        {letter.upper}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-center font-bold text-slate-500 mb-2">אותיות קטנות</h3>
+                            <div className="space-y-3">
+                                {lowers.map(letter => (
+                                    <button
+                                        key={'l-' + letter.upper}
+                                        onClick={() => clickLower(letter)}
+                                        className={`card-press w-full h-20 rounded-2xl border-2 en text-4xl font-extrabold
+                                                    ${cellClass(matched.includes(letter.upper), false, wrongKey === 'low-' + letter.upper)}`}
+                                    >
+                                        {letter.lower}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center mt-6">
+                        <button
+                            onClick={newRound}
+                            className="card-press rounded-2xl px-6 py-3 bg-slate-100 hover:bg-slate-200
+                                       text-slate-700 font-bold"
+                        >
+                            🔄 אותיות אחרות
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           שלב 1 — משחק ב': שומעים ובוחרים את האות הנכונה
+           ===================================================================== */
+
+        function makeQuestion() {
+            const options = sample(ALPHABET, 4);
+            const target = options[Math.floor(Math.random() * options.length)];
+            return {
+                id: Math.random().toString(36).slice(2),
+                target: target,
+                options: options,
+                mode: Math.random() < 0.5 ? 'name' : 'sound'
+            };
+        }
+
+        function GameHearAndPick({ speak, speakingKey, onCorrect, showToast }) {
+            const [question, setQuestion] = useState(makeQuestion);
+            const [wrongPicks, setWrongPicks] = useState([]);
+            const [solved, setSolved] = useState(false);
+
+            const prompt = question.mode === 'name' ? question.target.name : question.target.sound;
+
+            const playPrompt = useCallback(() => {
+                speak(prompt, { rate: 0.7, key: 'quiz-' + question.id });
+            }, [speak, prompt, question.id]);
+
+            // משמיעים אוטומטית כל שאלה חדשה
+            useEffect(() => {
+                const t = setTimeout(playPrompt, 350);
+                return () => clearTimeout(t);
+            }, [playPrompt]);
+
+            const nextQuestion = () => {
+                setQuestion(makeQuestion());
+                setWrongPicks([]);
+                setSolved(false);
+            };
+
+            const pick = (letter) => {
+                if (solved) return;
+                if (letter.upper === question.target.upper) {
+                    setSolved(true);
+                    playSuccessTone();
+                    onCorrect();
+                    showToast(randomPraise());
+                    setTimeout(nextQuestion, 1500);
+                } else {
+                    setWrongPicks(prev => prev.includes(letter.upper) ? prev : prev.concat(letter.upper));
+                }
+            };
+
+            return (
+                <div>
+                    <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 mb-5 text-center">
+                        <p className="text-lg font-bold text-violet-900 mb-1">
+                            {question.mode === 'name' ? 'איזו אות שמעת?' : 'איזו אות עושה את הצליל הזה?'}
+                        </p>
+                        <p className="text-slate-600">הקשב ואז לחץ על האות הנכונה. אפשר לשמוע שוב כמה פעמים שרוצים.</p>
+                    </div>
+
+                    <div className="text-center mb-6">
+                        <button
+                            onClick={playPrompt}
+                            className={`card-press inline-flex items-center gap-3 rounded-3xl px-8 py-5
+                                        bg-violet-500 hover:bg-violet-600 text-white shadow-lg
+                                        ${speakingKey === 'quiz-' + question.id ? 'speaking' : ''}`}
+                        >
+                            <IconSpeaker className="w-8 h-8" />
+                            <span className="text-xl font-extrabold">שמע שוב</span>
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 max-w-xl mx-auto">
+                        {question.options.map(letter => {
+                            const isTarget = letter.upper === question.target.upper;
+                            const isWrong = wrongPicks.includes(letter.upper);
+                            let style = 'bg-white border-slate-200 text-slate-800';
+                            if (solved && isTarget) style = 'bg-emerald-100 border-emerald-400 text-emerald-700 success-flash';
+                            else if (isWrong) style = 'bg-slate-100 border-slate-200 text-slate-300';
+                            return (
+                                <button
+                                    key={letter.upper}
+                                    onClick={() => pick(letter)}
+                                    disabled={isWrong}
+                                    className={`card-press h-28 rounded-2xl border-2 en text-5xl font-extrabold ${style}`}
+                                >
+                                    {letter.upper}{letter.lower}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {solved && (
+                        <div className="text-center mt-6 pop-in">
+                            <div className="text-5xl">🎉</div>
+                            <p className="en text-2xl font-bold text-emerald-600 mt-2">
+                                {question.target.upper}{question.target.lower} — {question.target.word}
+                            </p>
+                        </div>
+                    )}
+
+                    {!solved && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={nextQuestion}
+                                className="card-press rounded-2xl px-6 py-3 bg-slate-100 hover:bg-slate-200
+                                           text-slate-700 font-bold"
+                            >
+                                שאלה אחרת ←
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           שלב 1 — מסך השלב עם שלוש לשוניות
+           ===================================================================== */
+
+        const STAGE1_TABS = [
+            { id: 'letters', label: 'האותיות',     emoji: '🔤' },
+            { id: 'match',   label: 'משחק התאמה',  emoji: '🧩' },
+            { id: 'listen',  label: 'שמע ובחר',    emoji: '👂' }
+        ];
+
+        function Stage1Alphabet({ speech, learned, onLearn, onCorrect, showToast }) {
+            const [tab, setTab] = useState('letters');
+
+            return (
+                <div className="max-w-5xl mx-auto px-4 py-5">
+                    <div className="text-center mb-5">
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">
+                            🔤 שלב 1: האותיות והצלילים
+                        </h2>
+                        <p className="text-slate-500 mt-1">26 אותיות — זה כל מה שצריך כדי להתחיל לקרוא</p>
+                    </div>
+
+                    <div className="flex gap-2 justify-center mb-6 flex-wrap">
+                        {STAGE1_TABS.map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => setTab(t.id)}
+                                className={`card-press rounded-2xl px-5 py-2.5 font-bold border-2 flex items-center gap-2
+                                            ${tab === t.id
+                                                ? 'bg-slate-800 border-slate-800 text-white'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                            >
+                                <span className="text-lg">{t.emoji}</span>
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {tab === 'letters' && (
+                        <AlphabetGrid
+                            speak={speech.speak}
+                            speakingKey={speech.speakingKey}
+                            learned={learned}
+                            onLearn={onLearn}
+                        />
+                    )}
+                    {tab === 'match' && (
+                        <GameMatchCase
+                            speak={speech.speak}
+                            onCorrect={onCorrect}
+                            showToast={showToast}
+                        />
+                    )}
+                    {tab === 'listen' && (
+                        <GameHearAndPick
+                            speak={speech.speak}
+                            speakingKey={speech.speakingKey}
+                            onCorrect={onCorrect}
+                            showToast={showToast}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           מסך הבית
+           ===================================================================== */
+
+        function HomeScreen({ onStart, onSelectStage, stars, learnedCount }) {
+            return (
+                <div className="max-w-3xl mx-auto px-4 py-8 text-center">
+                    <div className="text-6xl mb-3">🌟</div>
+                    <h1 className="text-3xl md:text-5xl font-extrabold text-slate-800 mb-3">
+                        לומדים אנגלית מאפס
+                    </h1>
+                    <p className="text-lg md:text-xl text-slate-600 leading-relaxed mb-2">
+                        כאן לומדים לקרוא באנגלית צעד־אחר־צעד, בלי שום ידע קודם.
+                    </p>
+                    <p className="text-slate-500 mb-8">
+                        בכל מקום שיש בו כפתור רמקול 🔊 — אפשר ללחוץ ולשמוע איך אומרים את זה.
+                    </p>
+
+                    <button
+                        onClick={onStart}
+                        className="card-press bg-blue-500 hover:bg-blue-600 text-white text-xl font-extrabold
+                                   rounded-3xl px-10 py-5 shadow-lg mb-4"
+                    >
+                        בוא נתחיל! ←
+                    </button>
+
+                    {(stars > 0 || learnedCount > 0) && (
+                        <p className="text-slate-500 mb-8">
+                            עד עכשיו למדת <b className="text-slate-700">{learnedCount}</b> אותיות
+                            ואספת <b className="text-amber-600">{stars} ⭐</b>
+                        </p>
+                    )}
+
+                    <div className="grid gap-3 mt-8 text-right">
+                        {STAGES.map(stage => (
+                            <button
+                                key={stage.id}
+                                onClick={() => onSelectStage(stage.id)}
+                                className="card-press bg-white border-2 border-slate-200 hover:border-blue-300
+                                           rounded-2xl p-4 flex items-center gap-4 shadow-sm"
+                            >
+                                <span className="text-4xl shrink-0">{stage.emoji}</span>
+                                <span className="flex-1 min-w-0">
+                                    <span className="block font-extrabold text-slate-800 text-lg">
+                                        שלב {stage.id}: {stage.title}
+                                    </span>
+                                    <span className="block text-slate-500 text-sm leading-snug">{stage.desc}</span>
+                                </span>
+                                <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-lg
+                                                  ${stage.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {stage.ready ? 'מוכן' : 'בקרוב'}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        /* =====================================================================
+           האפליקציה
+           ===================================================================== */
+
+        const STORAGE_KEY = 'englishProgress';
+        const DEFAULT_PROGRESS = { stars: 0, lettersLearned: [], stageProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+
+        function EnglishApp() {
+            const [screen, setScreen] = useState('home');   // 'home' או מספר שלב
+            const [progress, setProgress] = useState(DEFAULT_PROGRESS);
+            const [loaded, setLoaded] = useState(false);
+            const [toast, setToast] = useState({ show: false, message: '' });
+            const speech = useSpeech();
+
+            // טעינת התקדמות שמורה
+            useEffect(() => {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        setProgress({
+                            stars: Number(parsed.stars) || 0,
+                            lettersLearned: Array.isArray(parsed.lettersLearned) ? parsed.lettersLearned : [],
+                            stageProgress: Object.assign({}, DEFAULT_PROGRESS.stageProgress, parsed.stageProgress)
+                        });
+                    }
+                } catch (e) { /* התקדמות פגומה — מתחילים מאפס */ }
+                setLoaded(true);
+            }, []);
+
+            // שמירה בכל שינוי (רק אחרי הטעינה, כדי לא לדרוס נתונים קיימים)
+            useEffect(() => {
+                if (!loaded) return;
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); } catch (e) { /* noop */ }
+            }, [progress, loaded]);
+
+            const showToast = useCallback((message) => setToast({ show: true, message: message }), []);
+            const hideToast = useCallback(() => setToast({ show: false, message: '' }), []);
+
+            const addStar = useCallback(() => {
+                setProgress(prev => Object.assign({}, prev, { stars: prev.stars + 1 }));
+            }, []);
+
+            const markLetterLearned = useCallback((upper) => {
+                setProgress(prev => prev.lettersLearned.includes(upper)
+                    ? prev
+                    : Object.assign({}, prev, { lettersLearned: prev.lettersLearned.concat(upper) }));
+            }, []);
+
+            const goToStage = (id) => {
+                speech.unlock();
+                setScreen(id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const renderScreen = () => {
+                if (screen === 'home') {
+                    return (
+                        <HomeScreen
+                            onStart={() => goToStage(1)}
+                            onSelectStage={goToStage}
+                            stars={progress.stars}
+                            learnedCount={progress.lettersLearned.length}
+                        />
+                    );
+                }
+                if (screen === 1) {
+                    return (
+                        <Stage1Alphabet
+                            speech={speech}
+                            learned={progress.lettersLearned}
+                            onLearn={markLetterLearned}
+                            onCorrect={addStar}
+                            showToast={showToast}
+                        />
+                    );
+                }
+                return <ComingSoon stage={STAGES.find(s => s.id === screen)} />;
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 pb-16">
+                    {screen !== 'home' && (
+                        <Header
+                            stars={progress.stars}
+                            learnedCount={progress.lettersLearned.length}
+                            onHome={() => setScreen('home')}
+                        />
+                    )}
+
+                    {!speech.supported && (
+                        <div className="bg-amber-100 border-b border-amber-300 text-amber-900 text-center
+                                        px-4 py-3 font-bold">
+                            🔇 הדפדפן הזה לא תומך בהשמעת קול. אפשר להמשיך ללמוד, אבל כדאי לעבור לכרום או לספארי.
+                        </div>
+                    )}
+
+                    {screen !== 'home' && <StageNav current={screen} onSelect={goToStage} />}
+
+                    {renderScreen()}
+
+                    <Toast message={toast.message} show={toast.show} onClose={hideToast} />
+                </div>
+            );
+        }
+
+        ReactDOM.render(<EnglishApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
