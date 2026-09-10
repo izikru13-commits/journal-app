@@ -20,7 +20,7 @@
         }
 
         body {
-            font-family: 'Heebo', sans-serif;
+            font-family: 'Heebo', 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -104,7 +104,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // Icons
         const Plus = ({ className }) => (
@@ -212,6 +212,23 @@
             tripHours: 8
         };
 
+        // Entry ids are strings so that the same value works as a document id
+        // when the log is synced (see useSyncedLog below).
+        const normalizeEntry = (entry) => ({ ...entry, id: String(entry.id) });
+
+        const loadLocal = () => {
+            const result = { entries: [], settings: DEFAULT_SETTINGS };
+            try {
+                const savedEntries = localStorage.getItem(STORAGE_KEY);
+                if (savedEntries) result.entries = JSON.parse(savedEntries).map(normalizeEntry);
+                const savedSettings = localStorage.getItem(SETTINGS_KEY);
+                if (savedSettings) result.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) };
+            } catch (e) {
+                console.error('Error loading work hours:', e);
+            }
+            return result;
+        };
+
         const pad = (n) => String(n).padStart(2, '0');
 
         const todayISO = () => {
@@ -316,38 +333,129 @@
             );
         }
 
+        // Handing over a file: published as an artifact the viewer confirms the
+        // save; as a plain page an ordinary download link does the job.
+        const saveFile = async (filename, blob) => {
+            const use = window.claude && window.claude.use;
+            if (typeof use === 'function') {
+                const downloads = await Promise.resolve(use.call(window.claude, 'downloads')).catch(() => null);
+                if (downloads) {
+                    try {
+                        await downloads.save({ filename, data: blob });
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            // Safari and mobile browsers only honour the download attribute
+            // when the link is actually in the document.
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            return true;
+        };
+
+        // ---------- Cross-device sync ----------
+        // Published as a Claude artifact this page is given a shared document
+        // store, so the same log opens on every device. Anywhere else — a plain
+        // file, GitHub Pages — `claude.use` simply isn't there and the page runs
+        // straight from localStorage.
+
+        const writeEntry = (db, entry) => {
+            if (!db) return;
+            const { id, ...body } = entry;
+            db.doc('entries/' + id).set(body).catch(() => {});
+        };
+
+        const writeSettings = (db, settings) => {
+            if (!db) return;
+            db.doc('config/rates').set(settings).catch(() => {});
+        };
+
+        function useSyncedLog(initial, setEntries, setSettings) {
+            const dbRef = useRef(null);
+            const [synced, setSynced] = useState(false);
+
+            useEffect(() => {
+                const use = window.claude && window.claude.use;
+                if (typeof use !== 'function') return;
+
+                let stopped = false;
+                let seeded = false;
+                const stops = [];
+
+                Promise.resolve(use.call(window.claude, 'db')).then(db => {
+                    if (!db || stopped) return;
+                    dbRef.current = db;
+                    setSynced(true);
+
+                    const fail = () => { dbRef.current = null; setSynced(false); };
+
+                    stops.push(db.collection('entries').onSnapshot(snap => {
+                        if (!seeded) {
+                            seeded = true;
+                            // First open on a synced device: hand the local log to
+                            // the store rather than let an empty store blank it.
+                            if (snap.empty && initial.entries.length > 0) {
+                                initial.entries.forEach(entry => writeEntry(db, entry));
+                                writeSettings(db, initial.settings);
+                                return;
+                            }
+                        }
+                        setEntries(snap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+                    }, fail));
+
+                    stops.push(db.doc('config/rates').onSnapshot(snap => {
+                        if (snap.exists) setSettings({ ...DEFAULT_SETTINGS, ...snap.data() });
+                    }, fail));
+                }).catch(() => {});
+
+                return () => {
+                    stopped = true;
+                    stops.forEach(stop => stop());
+                };
+            }, []);
+
+            return {
+                synced,
+                pushEntry: (entry) => writeEntry(dbRef.current, entry),
+                dropEntry: (id) => {
+                    const db = dbRef.current;
+                    if (db) db.doc('entries/' + id).delete().catch(() => {});
+                },
+                pushSettings: (next) => writeSettings(dbRef.current, next)
+            };
+        }
+
         // Main App Component
         function WorkHoursApp() {
-            const [entries, setEntries] = useState([]);
-            const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-            const [loaded, setLoaded] = useState(false);
+            const initial = useRef(loadLocal());
+            const [entries, setEntries] = useState(initial.current.entries);
+            const [settings, setSettings] = useState(initial.current.settings);
             const [month, setMonth] = useState(currentMonthKey());
             const [editingEntry, setEditingEntry] = useState(null);
             const [showEntryModal, setShowEntryModal] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [toast, setToast] = useState({ show: false, message: '' });
 
-            useEffect(() => {
-                try {
-                    const savedEntries = localStorage.getItem(STORAGE_KEY);
-                    if (savedEntries) setEntries(JSON.parse(savedEntries));
-                    const savedSettings = localStorage.getItem(SETTINGS_KEY);
-                    if (savedSettings) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
-                } catch (e) {
-                    console.error('Error loading work hours:', e);
-                }
-                setLoaded(true);
-            }, []);
+            const { synced, pushEntry, dropEntry, pushSettings } =
+                useSyncedLog(initial.current, setEntries, setSettings);
 
-            // Only persist after the initial load, so an empty first render
-            // can never overwrite existing data.
+            // localStorage always holds a copy, so the log survives on this
+            // device whether or not the shared store is available.
             useEffect(() => {
-                if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-            }, [entries, loaded]);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            }, [entries]);
 
             useEffect(() => {
-                if (loaded) localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-            }, [settings, loaded]);
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            }, [settings]);
 
             const showToast = (message) => setToast({ show: true, message });
             const hideToast = () => setToast({ show: false, message: '' });
@@ -369,14 +477,18 @@
             }, [entries, month]);
 
             const saveEntry = (data) => {
+                let saved;
                 if (data.id) {
-                    setEntries(entries.map(e => e.id === data.id ? { ...e, ...data } : e));
+                    const existing = entries.find(e => e.id === data.id);
+                    saved = { ...existing, ...data };
+                    setEntries(entries.map(e => e.id === data.id ? saved : e));
                     showToast('הרישום עודכן ✓');
                 } else {
-                    const newEntry = { ...data, id: Date.now(), paid: false, createdAt: new Date().toISOString() };
-                    setEntries([...entries, newEntry]);
+                    saved = normalizeEntry({ ...data, id: Date.now(), paid: false, createdAt: new Date().toISOString() });
+                    setEntries([...entries, saved]);
                     showToast('הרישום נוסף! 🎉');
                 }
+                pushEntry(saved);
                 setShowEntryModal(false);
                 setEditingEntry(null);
                 setMonth(monthKeyOf(data.date));
@@ -385,18 +497,24 @@
             const deleteEntry = (id) => {
                 if (confirm('האם אתה בטוח שברצונך למחוק את הרישום?')) {
                     setEntries(entries.filter(e => e.id !== id));
+                    dropEntry(id);
                     showToast('הרישום נמחק');
                 }
             };
 
             const togglePaid = (id) => {
-                setEntries(entries.map(e => e.id === id ? { ...e, paid: !e.paid } : e));
+                const updated = entries.map(e => e.id === id ? { ...e, paid: !e.paid } : e);
+                setEntries(updated);
+                const changed = updated.find(e => e.id === id);
+                if (changed) pushEntry(changed);
             };
 
             const markMonthPaid = () => {
                 const allPaid = monthEntries.length > 0 && monthEntries.every(e => e.paid);
                 const ids = new Set(monthEntries.map(e => e.id));
-                setEntries(entries.map(e => ids.has(e.id) ? { ...e, paid: !allPaid } : e));
+                const updated = entries.map(e => ids.has(e.id) ? { ...e, paid: !allPaid } : e);
+                setEntries(updated);
+                updated.filter(e => ids.has(e.id)).forEach(pushEntry);
                 showToast(allPaid ? 'החודש סומן כלא שולם' : 'החודש סומן כשולם ✓');
             };
 
@@ -427,17 +545,9 @@
                 const csv = rows.map(r => r.map(escape).join(',')).join('\n');
                 // BOM keeps Hebrew readable when the file is opened in Excel.
                 const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `work-hours-${month}.csv`;
-                // Safari and mobile browsers only honour the download attribute
-                // when the link is actually in the document.
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                showToast('הקובץ יוצא ✓');
+                saveFile(`work-hours-${month}.csv`, blob).then(saved => {
+                    if (saved) showToast('הקובץ יוצא ✓');
+                });
             };
 
             const openNewEntry = () => {
@@ -455,6 +565,7 @@
                     <div className="max-w-5xl mx-auto">
                         {/* Header */}
                         <div className="flex items-start justify-between gap-3 mb-6">
+                            {/* nav:start */}
                             <a
                                 href="index.html"
                                 className="flex items-center gap-2 text-gray-400 hover:text-white active:text-white transition-colors text-sm md:text-base"
@@ -462,6 +573,7 @@
                                 <ArrowRight className="w-5 h-5" />
                                 <span className="hidden sm:inline">ליומנים</span>
                             </a>
+                            {/* nav:end */}
                             <div className="text-center flex-1">
                                 <h1 className="text-3xl md:text-5xl font-bold mb-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent">
                                     ניהול שעות עבודה
@@ -469,6 +581,9 @@
                                 <p className="text-gray-400 text-sm md:text-base">
                                     {formatMoney(settings.hourlyRate)} לשעה · יום טיול {formatMoney(settings.tripBonus)} בונוס
                                 </p>
+                                {synced && (
+                                    <p className="text-xs text-teal-400/80 mt-1">מסונכרן בין המכשירים שלך</p>
+                                )}
                             </div>
                             <button
                                 onClick={() => setShowSettings(true)}
@@ -641,6 +756,7 @@
                                 onClose={() => setShowSettings(false)}
                                 onSave={(next) => {
                                     setSettings(next);
+                                    pushSettings(next);
                                     setShowSettings(false);
                                     showToast('ההגדרות נשמרו ✓');
                                 }}
