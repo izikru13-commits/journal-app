@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e293b">
+    <title>ניהול שעות עבודה</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #4B5563 #1F2937;
+        }
+
+        *::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: #1F2937;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background-color: #4B5563;
+            border-radius: 3px;
+        }
+
+        .entry-card {
+            transition: all 0.3s ease;
+        }
+
+        .entry-card:active {
+            transform: scale(0.99);
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+        }
+
+        @media (max-width: 768px) {
+            .modal-backdrop > div {
+                margin: 0;
+                border-radius: 1.5rem 1.5rem 0 0;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                max-height: 92vh;
+            }
+        }
+
+        button, a, input, textarea, select {
+            min-height: 44px;
+        }
+
+        button {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .toast {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Keep native date/time pickers readable on dark background */
+        input[type="date"], input[type="time"], input[type="month"] {
+            color-scheme: dark;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Icons
+        const Plus = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+        );
+
+        const X = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        );
+
+        const Check = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+        );
+
+        const Trash2 = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        );
+
+        const Pencil = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        );
+
+        const Clock = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const Wallet = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h2m-4 5h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const MapPin = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Calendar = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const Settings = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Download = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+        );
+
+        const ChevronRight = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+        );
+
+        const ChevronLeft = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+        );
+
+        const ArrowRight = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+        );
+
+        const BookOpen = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        );
+
+        // ---------- Constants & helpers ----------
+
+        const STORAGE_KEY = 'workHoursEntries';
+        const SETTINGS_KEY = 'workHoursSettings';
+
+        // Defaults: 50 ₪ per hour, a trip day counts as 8 hours + a 300 ₪ bonus.
+        // All three are editable in the settings modal.
+        const DEFAULT_SETTINGS = {
+            hourlyRate: 50,
+            tripBonus: 300,
+            tripHours: 8
+        };
+
+        const pad = (n) => String(n).padStart(2, '0');
+
+        const todayISO = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        };
+
+        const monthKeyOf = (isoDate) => (isoDate || '').slice(0, 7);
+
+        const currentMonthKey = () => todayISO().slice(0, 7);
+
+        // Minutes between two "HH:MM" strings, wrapping past midnight for night shifts.
+        const minutesBetween = (start, end) => {
+            if (!start || !end) return 0;
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            if ([sh, sm, eh, em].some(isNaN)) return 0;
+            let diff = (eh * 60 + em) - (sh * 60 + sm);
+            if (diff <= 0) diff += 24 * 60;
+            return diff;
+        };
+
+        const hoursBetween = (start, end) => minutesBetween(start, end) / 60;
+
+        // 7.5 -> "7:30", so hours read like a clock instead of a decimal.
+        const formatHours = (hours) => {
+            const total = Math.round((Number(hours) || 0) * 60);
+            return `${Math.floor(total / 60)}:${pad(total % 60)}`;
+        };
+
+        const formatMoney = (amount) => {
+            const rounded = Math.round((Number(amount) || 0) * 100) / 100;
+            return '₪' + rounded.toLocaleString('he-IL');
+        };
+
+        const formatMonth = (key) => {
+            if (!key) return '';
+            const [y, m] = key.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+        };
+
+        const formatDate = (iso) => {
+            if (!iso) return '';
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+        };
+
+        const dayName = (iso) => {
+            if (!iso) return '';
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('he-IL', { weekday: 'long' });
+        };
+
+        const shiftMonth = (key, delta) => {
+            const [y, m] = key.split('-').map(Number);
+            const d = new Date(y, m - 1 + delta, 1);
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        };
+
+        // A single source of truth for money: hours × rate, plus the bonus on trip days.
+        const entryPay = (entry, settings) => {
+            const base = (Number(entry.hours) || 0) * (Number(settings.hourlyRate) || 0);
+            const bonus = entry.isTrip ? (Number(settings.tripBonus) || 0) : 0;
+            return base + bonus;
+        };
+
+        const summarize = (entries, settings) => {
+            return entries.reduce((acc, entry) => {
+                const hours = Number(entry.hours) || 0;
+                const pay = entryPay(entry, settings);
+                acc.hours += hours;
+                acc.pay += pay;
+                acc.days += 1;
+                if (entry.isTrip) {
+                    acc.tripDays += 1;
+                    acc.bonus += Number(settings.tripBonus) || 0;
+                }
+                if (entry.paid) acc.paid += pay;
+                else acc.unpaid += pay;
+                return acc;
+            }, { hours: 0, pay: 0, days: 0, tripDays: 0, bonus: 0, paid: 0, unpaid: 0 });
+        };
+
+        // Toast Notification Component
+        function Toast({ message, show, onClose }) {
+            useEffect(() => {
+                if (show) {
+                    const timer = setTimeout(onClose, 2000);
+                    return () => clearTimeout(timer);
+                }
+            }, [show, onClose]);
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 toast">
+                    <div className="bg-green-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2">
+                        <Check className="w-5 h-5" />
+                        <span className="font-medium">{message}</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function WorkHoursApp() {
+            const [entries, setEntries] = useState([]);
+            const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+            const [loaded, setLoaded] = useState(false);
+            const [month, setMonth] = useState(currentMonthKey());
+            const [editingEntry, setEditingEntry] = useState(null);
+            const [showEntryModal, setShowEntryModal] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
+            const [toast, setToast] = useState({ show: false, message: '' });
+
+            useEffect(() => {
+                try {
+                    const savedEntries = localStorage.getItem(STORAGE_KEY);
+                    if (savedEntries) setEntries(JSON.parse(savedEntries));
+                    const savedSettings = localStorage.getItem(SETTINGS_KEY);
+                    if (savedSettings) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
+                } catch (e) {
+                    console.error('Error loading work hours:', e);
+                }
+                setLoaded(true);
+            }, []);
+
+            // Only persist after the initial load, so an empty first render
+            // can never overwrite existing data.
+            useEffect(() => {
+                if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            }, [entries, loaded]);
+
+            useEffect(() => {
+                if (loaded) localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            }, [settings, loaded]);
+
+            const showToast = (message) => setToast({ show: true, message });
+            const hideToast = () => setToast({ show: false, message: '' });
+
+            const monthEntries = useMemo(
+                () => entries
+                    .filter(e => monthKeyOf(e.date) === month)
+                    .sort((a, b) => b.date.localeCompare(a.date) || (b.start || '').localeCompare(a.start || '')),
+                [entries, month]
+            );
+
+            const monthTotals = useMemo(() => summarize(monthEntries, settings), [monthEntries, settings]);
+            const allTotals = useMemo(() => summarize(entries, settings), [entries, settings]);
+
+            const monthsWithData = useMemo(() => {
+                const keys = Array.from(new Set(entries.map(e => monthKeyOf(e.date)).filter(Boolean)));
+                if (!keys.includes(month)) keys.push(month);
+                return keys.sort().reverse();
+            }, [entries, month]);
+
+            const saveEntry = (data) => {
+                if (data.id) {
+                    setEntries(entries.map(e => e.id === data.id ? { ...e, ...data } : e));
+                    showToast('הרישום עודכן ✓');
+                } else {
+                    const newEntry = { ...data, id: Date.now(), paid: false, createdAt: new Date().toISOString() };
+                    setEntries([...entries, newEntry]);
+                    showToast('הרישום נוסף! 🎉');
+                }
+                setShowEntryModal(false);
+                setEditingEntry(null);
+                setMonth(monthKeyOf(data.date));
+            };
+
+            const deleteEntry = (id) => {
+                if (confirm('האם אתה בטוח שברצונך למחוק את הרישום?')) {
+                    setEntries(entries.filter(e => e.id !== id));
+                    showToast('הרישום נמחק');
+                }
+            };
+
+            const togglePaid = (id) => {
+                setEntries(entries.map(e => e.id === id ? { ...e, paid: !e.paid } : e));
+            };
+
+            const markMonthPaid = () => {
+                const allPaid = monthEntries.length > 0 && monthEntries.every(e => e.paid);
+                const ids = new Set(monthEntries.map(e => e.id));
+                setEntries(entries.map(e => ids.has(e.id) ? { ...e, paid: !allPaid } : e));
+                showToast(allPaid ? 'החודש סומן כלא שולם' : 'החודש סומן כשולם ✓');
+            };
+
+            const exportCsv = () => {
+                if (monthEntries.length === 0) {
+                    showToast('אין רישומים לייצוא');
+                    return;
+                }
+                const rows = [['תאריך', 'יום', 'התחלה', 'סיום', 'שעות', 'יום טיול', 'בונוס', 'סה״כ לתשלום', 'שולם', 'הערה']];
+                monthEntries.slice().reverse().forEach(e => {
+                    rows.push([
+                        e.date,
+                        dayName(e.date),
+                        e.start || '',
+                        e.end || '',
+                        (Number(e.hours) || 0).toFixed(2),
+                        e.isTrip ? 'כן' : 'לא',
+                        e.isTrip ? settings.tripBonus : 0,
+                        entryPay(e, settings).toFixed(2),
+                        e.paid ? 'כן' : 'לא',
+                        e.note || ''
+                    ]);
+                });
+                rows.push([]);
+                rows.push(['סה״כ', '', '', '', monthTotals.hours.toFixed(2), monthTotals.tripDays, monthTotals.bonus, monthTotals.pay.toFixed(2), '', '']);
+
+                const escape = (cell) => `"${String(cell).replace(/"/g, '""')}"`;
+                const csv = rows.map(r => r.map(escape).join(',')).join('\n');
+                // BOM keeps Hebrew readable when the file is opened in Excel.
+                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `work-hours-${month}.csv`;
+                // Safari and mobile browsers only honour the download attribute
+                // when the link is actually in the document.
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToast('הקובץ יוצא ✓');
+            };
+
+            const openNewEntry = () => {
+                setEditingEntry(null);
+                setShowEntryModal(true);
+            };
+
+            const openEditEntry = (entry) => {
+                setEditingEntry(entry);
+                setShowEntryModal(true);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-4 md:p-8 pb-28 md:pb-8">
+                    <div className="max-w-5xl mx-auto">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3 mb-6">
+                            <a
+                                href="index.html"
+                                className="flex items-center gap-2 text-gray-400 hover:text-white active:text-white transition-colors text-sm md:text-base"
+                            >
+                                <ArrowRight className="w-5 h-5" />
+                                <span className="hidden sm:inline">ליומנים</span>
+                            </a>
+                            <div className="text-center flex-1">
+                                <h1 className="text-3xl md:text-5xl font-bold mb-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent">
+                                    ניהול שעות עבודה
+                                </h1>
+                                <p className="text-gray-400 text-sm md:text-base">
+                                    {formatMoney(settings.hourlyRate)} לשעה · יום טיול {formatMoney(settings.tripBonus)} בונוס
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 rounded-xl transition-colors"
+                                title="הגדרות תעריפים"
+                            >
+                                <Settings className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Month selector */}
+                        <div className="flex items-center justify-between gap-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-2 md:p-3 border border-gray-700/50 mb-4 md:mb-6">
+                            <button
+                                onClick={() => setMonth(shiftMonth(month, 1))}
+                                className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-xl transition-colors"
+                                title="חודש הבא"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
+                                <Calendar className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                                <select
+                                    value={month}
+                                    onChange={(e) => setMonth(e.target.value)}
+                                    className="bg-transparent text-base md:text-lg font-semibold text-center focus:outline-none cursor-pointer max-w-full"
+                                >
+                                    {monthsWithData.map(key => (
+                                        <option key={key} value={key} className="bg-gray-800">{formatMonth(key)}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                onClick={() => setMonth(shiftMonth(month, -1))}
+                                className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-xl transition-colors"
+                                title="חודש קודם"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Month summary */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+                            <StatCard
+                                icon={<Clock className="w-5 h-5" />}
+                                label="שעות החודש"
+                                value={formatHours(monthTotals.hours)}
+                                sub={`${monthTotals.days} ימי עבודה`}
+                                gradient="from-blue-500 to-cyan-600"
+                            />
+                            <StatCard
+                                icon={<Wallet className="w-5 h-5" />}
+                                label="סה״כ לתשלום"
+                                value={formatMoney(monthTotals.pay)}
+                                sub={`${formatMoney(monthTotals.pay - monthTotals.bonus)} שעות + ${formatMoney(monthTotals.bonus)} בונוס`}
+                                gradient="from-emerald-500 to-teal-600"
+                            />
+                            <StatCard
+                                icon={<MapPin className="w-5 h-5" />}
+                                label="ימי טיול"
+                                value={monthTotals.tripDays}
+                                sub={`${formatMoney(monthTotals.bonus)} בונוסים`}
+                                gradient="from-orange-500 to-amber-600"
+                            />
+                            <StatCard
+                                icon={<Check className="w-5 h-5" />}
+                                label="טרם שולם"
+                                value={formatMoney(monthTotals.unpaid)}
+                                sub={`שולם ${formatMoney(monthTotals.paid)}`}
+                                gradient="from-purple-500 to-pink-600"
+                            />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4 md:mb-6">
+                            <button
+                                onClick={openNewEntry}
+                                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-6 py-3 rounded-2xl font-semibold shadow-2xl hover:shadow-teal-500/40 transition-all transform active:scale-95"
+                            >
+                                <Plus className="w-5 h-5" />
+                                הוסף יום עבודה
+                            </button>
+                            <button
+                                onClick={markMonthPaid}
+                                disabled={monthEntries.length === 0}
+                                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-3 rounded-2xl text-sm font-medium border border-gray-700 transition-colors"
+                            >
+                                <Check className="w-4 h-4" />
+                                {monthEntries.length > 0 && monthEntries.every(e => e.paid) ? 'בטל סימון תשלום' : 'סמן חודש כשולם'}
+                            </button>
+                            <button
+                                onClick={exportCsv}
+                                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 px-4 py-3 rounded-2xl text-sm font-medium border border-gray-700 transition-colors"
+                            >
+                                <Download className="w-4 h-4" />
+                                ייצוא CSV
+                            </button>
+                        </div>
+
+                        {/* Entries */}
+                        {monthEntries.length === 0 ? (
+                            <div className="text-center py-12 md:py-20 bg-gray-800/30 rounded-2xl border border-gray-700/50">
+                                <Clock className="w-20 h-20 mx-auto mb-4 text-gray-600" />
+                                <h2 className="text-xl md:text-2xl font-semibold text-gray-400 mb-2">אין רישומים ב{formatMonth(month)}</h2>
+                                <p className="text-gray-500 text-sm md:text-base">הוסף את יום העבודה הראשון שלך והשעות יחושבו אוטומטית</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {monthEntries.map(entry => (
+                                    <EntryCard
+                                        key={entry.id}
+                                        entry={entry}
+                                        settings={settings}
+                                        onEdit={() => openEditEntry(entry)}
+                                        onDelete={() => deleteEntry(entry.id)}
+                                        onTogglePaid={() => togglePaid(entry.id)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* All time summary */}
+                        {entries.length > 0 && (
+                            <div className="mt-6 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-5 border border-gray-700/50">
+                                <h3 className="text-sm text-gray-400 mb-3">סיכום מצטבר (כל התקופה)</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                                    <div>
+                                        <div className="text-xl md:text-2xl font-bold text-blue-400">{formatHours(allTotals.hours)}</div>
+                                        <div className="text-xs text-gray-500">שעות</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xl md:text-2xl font-bold text-emerald-400">{formatMoney(allTotals.pay)}</div>
+                                        <div className="text-xs text-gray-500">סה״כ שכר</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xl md:text-2xl font-bold text-orange-400">{allTotals.tripDays}</div>
+                                        <div className="text-xs text-gray-500">ימי טיול</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xl md:text-2xl font-bold text-pink-400">{formatMoney(allTotals.unpaid)}</div>
+                                        <div className="text-xs text-gray-500">טרם שולם</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Mobile add button */}
+                        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent backdrop-blur-sm z-40">
+                            <button
+                                onClick={openNewEntry}
+                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-700 active:to-teal-700 px-6 py-4 rounded-2xl font-semibold text-lg shadow-2xl transform active:scale-95 transition-all"
+                            >
+                                <Plus className="w-6 h-6" />
+                                הוסף יום עבודה
+                            </button>
+                        </div>
+
+                        {showEntryModal && (
+                            <EntryModal
+                                entry={editingEntry}
+                                settings={settings}
+                                defaultMonth={month}
+                                onClose={() => { setShowEntryModal(false); setEditingEntry(null); }}
+                                onSave={saveEntry}
+                            />
+                        )}
+
+                        {showSettings && (
+                            <SettingsModal
+                                settings={settings}
+                                onClose={() => setShowSettings(false)}
+                                onSave={(next) => {
+                                    setSettings(next);
+                                    setShowSettings(false);
+                                    showToast('ההגדרות נשמרו ✓');
+                                }}
+                            />
+                        )}
+                    </div>
+                    <Toast message={toast.message} show={toast.show} onClose={hideToast} />
+                </div>
+            );
+        }
+
+        // Stat Card Component
+        function StatCard({ icon, label, value, sub, gradient }) {
+            return (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 shadow-lg">
+                    <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-r ${gradient} mb-2`}>
+                        {icon}
+                    </div>
+                    <div className="text-xs text-gray-400">{label}</div>
+                    <div className="text-2xl md:text-3xl font-bold">{value}</div>
+                    <div className="text-[11px] text-gray-500 truncate">{sub}</div>
+                </div>
+            );
+        }
+
+        // Entry Card Component
+        function EntryCard({ entry, settings, onEdit, onDelete, onTogglePaid }) {
+            const pay = entryPay(entry, settings);
+
+            return (
+                <div className={`entry-card bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-5 border shadow-lg ${entry.isTrip ? 'border-orange-500/40' : 'border-gray-700/50'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="font-semibold text-base md:text-lg">{dayName(entry.date)}</span>
+                                <span className="text-sm text-gray-400">{formatDate(entry.date)}</span>
+                                {entry.isTrip && (
+                                    <span className="flex items-center gap-1 text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded-full">
+                                        <MapPin className="w-3 h-3" />
+                                        יום טיול
+                                    </span>
+                                )}
+                                {entry.paid && (
+                                    <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">שולם</span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-gray-300 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4 text-blue-400" />
+                                    {formatHours(entry.hours)} שעות
+                                </span>
+                                {entry.start && entry.end && (
+                                    <span className="text-gray-500" dir="ltr">{entry.start} - {entry.end}</span>
+                                )}
+                            </div>
+                            {entry.note && (
+                                <p className="text-sm text-gray-400 mt-2 break-words">{entry.note}</p>
+                            )}
+                        </div>
+
+                        <div className="text-left flex-shrink-0">
+                            <div className="text-xl md:text-2xl font-bold text-emerald-400">{formatMoney(pay)}</div>
+                            {entry.isTrip && (
+                                <div className="text-[11px] text-gray-500">
+                                    {formatMoney(pay - settings.tripBonus)} + {formatMoney(settings.tripBonus)}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-700/50">
+                        <button
+                            onClick={onTogglePaid}
+                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${entry.paid ? 'bg-green-600/20 text-green-300 hover:bg-green-600/30' : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'}`}
+                        >
+                            <Check className="w-3 h-3" />
+                            {entry.paid ? 'שולם' : 'סמן כשולם'}
+                        </button>
+                        <div className="flex-1" />
+                        <button
+                            onClick={onEdit}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 active:bg-gray-600 rounded-lg transition-colors"
+                            title="עריכה"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-red-600 active:bg-red-700 rounded-lg transition-colors"
+                            title="מחיקה"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Accepts both "7.5" and "7:30" so the hours field matches how people think.
+        const parseHoursInput = (value) => {
+            const text = String(value || '').trim().replace(',', '.');
+            if (!text) return 0;
+            if (text.includes(':')) {
+                const [h, m] = text.split(':');
+                return (Number(h) || 0) + (Number(m) || 0) / 60;
+            }
+            return Number(text) || 0;
+        };
+
+        // Add / Edit Entry Modal
+        function EntryModal({ entry, settings, defaultMonth, onClose, onSave }) {
+            const isEdit = Boolean(entry);
+            const initialDate = entry ? entry.date
+                : (defaultMonth === currentMonthKey() ? todayISO() : `${defaultMonth}-01`);
+
+            const [date, setDate] = useState(initialDate);
+            const [mode, setMode] = useState(entry && entry.start && entry.end ? 'clock' : (entry ? 'manual' : 'clock'));
+            const [start, setStart] = useState(entry ? (entry.start || '') : '09:00');
+            const [end, setEnd] = useState(entry ? (entry.end || '') : '17:00');
+            const [manualHours, setManualHours] = useState(entry ? String(Math.round((entry.hours || 0) * 100) / 100) : '');
+            const [isTrip, setIsTrip] = useState(entry ? Boolean(entry.isTrip) : false);
+            const [note, setNote] = useState(entry ? (entry.note || '') : '');
+
+            const hours = mode === 'clock' ? hoursBetween(start, end) : parseHoursInput(manualHours);
+            const pay = hours * (Number(settings.hourlyRate) || 0) + (isTrip ? (Number(settings.tripBonus) || 0) : 0);
+
+            const toggleTrip = () => {
+                const next = !isTrip;
+                setIsTrip(next);
+                // A trip day defaults to the configured day length; the hours stay editable.
+                if (next && mode === 'manual' && parseHoursInput(manualHours) === 0) {
+                    setManualHours(String(settings.tripHours));
+                }
+            };
+
+            const useTripHours = () => {
+                setMode('manual');
+                setManualHours(String(settings.tripHours));
+            };
+
+            const handleSave = () => {
+                if (!date) {
+                    alert('יש לבחור תאריך');
+                    return;
+                }
+                if (hours <= 0) {
+                    alert('יש להזין שעות עבודה');
+                    return;
+                }
+                onSave({
+                    id: entry ? entry.id : undefined,
+                    date,
+                    start: mode === 'clock' ? start : '',
+                    end: mode === 'clock' ? end : '',
+                    hours: Math.round(hours * 100) / 100,
+                    isTrip,
+                    note: note.trim()
+                });
+            };
+
+            return (
+                <div className="modal-backdrop fixed inset-0 bg-black/70 flex items-end md:items-center justify-center z-50 md:p-4">
+                    <div className="bg-gray-800 rounded-t-3xl md:rounded-2xl p-5 md:p-6 max-w-lg w-full border border-gray-700 shadow-2xl overflow-y-auto">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-xl md:text-2xl font-bold">{isEdit ? 'עריכת יום עבודה' : 'הוספת יום עבודה'}</h2>
+                            <button
+                                onClick={onClose}
+                                className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Date */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2 text-gray-300">תאריך</label>
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                />
+                                {date && <p className="text-xs text-gray-500 mt-1">{dayName(date)}</p>}
+                            </div>
+
+                            {/* Mode toggle */}
+                            <div className="grid grid-cols-2 gap-2 bg-gray-900/50 p-1 rounded-xl">
+                                <button
+                                    onClick={() => setMode('clock')}
+                                    className={`py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'clock' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    שעת התחלה וסיום
+                                </button>
+                                <button
+                                    onClick={() => setMode('manual')}
+                                    className={`py-2 rounded-lg text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    מספר שעות
+                                </button>
+                            </div>
+
+                            {mode === 'clock' ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2 text-gray-300">התחלה</label>
+                                        <input
+                                            type="time"
+                                            value={start}
+                                            onChange={(e) => setStart(e.target.value)}
+                                            className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2 text-gray-300">סיום</label>
+                                        <input
+                                            type="time"
+                                            value={end}
+                                            onChange={(e) => setEnd(e.target.value)}
+                                            className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium mb-2 text-gray-300">שעות עבודה</label>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={manualHours}
+                                        onChange={(e) => setManualHours(e.target.value)}
+                                        placeholder="לדוגמה: 7.5 או 7:30"
+                                        className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Trip day */}
+                            <div className={`rounded-xl p-4 border transition-colors ${isTrip ? 'bg-orange-500/10 border-orange-500/40' : 'bg-gray-700/40 border-gray-700'}`}>
+                                <button
+                                    onClick={toggleTrip}
+                                    className="w-full flex items-center justify-between gap-3 text-right"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <MapPin className={`w-5 h-5 ${isTrip ? 'text-orange-400' : 'text-gray-400'}`} />
+                                        <span className="font-medium">יום טיול</span>
+                                    </span>
+                                    <span className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors ${isTrip ? 'bg-orange-500 justify-start' : 'bg-gray-600 justify-end'}`}>
+                                        <span className="w-5 h-5 bg-white rounded-full block" />
+                                    </span>
+                                </button>
+                                {isTrip && (
+                                    <div className="mt-3 text-xs text-orange-200/80 flex items-center justify-between gap-2 flex-wrap">
+                                        <span>בונוס של {formatMoney(settings.tripBonus)} מעבר לתשלום לפי שעות</span>
+                                        <button
+                                            onClick={useTripHours}
+                                            className="underline hover:text-orange-100"
+                                        >
+                                            קבע {settings.tripHours} שעות
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Note */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2 text-gray-300">הערה (אופציונלי)</label>
+                                <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder="מה עשית היום?"
+                                    rows={2}
+                                    className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-500"
+                                />
+                            </div>
+
+                            {/* Live calculation */}
+                            <div className="bg-gray-900/60 rounded-xl p-4 border border-gray-700">
+                                <div className="flex items-center justify-between text-sm text-gray-400 mb-1">
+                                    <span>{formatHours(hours)} שעות × {formatMoney(settings.hourlyRate)}</span>
+                                    <span>{formatMoney(hours * settings.hourlyRate)}</span>
+                                </div>
+                                {isTrip && (
+                                    <div className="flex items-center justify-between text-sm text-orange-300 mb-1">
+                                        <span>בונוס יום טיול</span>
+                                        <span>{formatMoney(settings.tripBonus)}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between font-bold text-lg pt-2 border-t border-gray-700">
+                                    <span>סה״כ</span>
+                                    <span className="text-emerald-400">{formatMoney(pay)}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-1">
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    ביטול
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-3 rounded-xl font-semibold transition-all transform active:scale-95"
+                                >
+                                    {isEdit ? 'שמור שינויים' : 'הוסף'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Settings Modal
+        function SettingsModal({ settings, onClose, onSave }) {
+            const [hourlyRate, setHourlyRate] = useState(String(settings.hourlyRate));
+            const [tripBonus, setTripBonus] = useState(String(settings.tripBonus));
+            const [tripHours, setTripHours] = useState(String(settings.tripHours));
+
+            const handleSave = () => {
+                onSave({
+                    hourlyRate: Number(hourlyRate) || 0,
+                    tripBonus: Number(tripBonus) || 0,
+                    tripHours: parseHoursInput(tripHours) || DEFAULT_SETTINGS.tripHours
+                });
+            };
+
+            const fields = [
+                { label: 'תעריף לשעה (₪)', value: hourlyRate, setter: setHourlyRate, hint: 'התשלום עבור כל שעת עבודה' },
+                { label: 'בונוס יום טיול (₪)', value: tripBonus, setter: setTripBonus, hint: 'מתווסף לתשלום לפי שעות בימי טיול' },
+                { label: 'שעות ביום טיול', value: tripHours, setter: setTripHours, hint: 'ברירת המחדל של אורך יום טיול' }
+            ];
+
+            return (
+                <div className="modal-backdrop fixed inset-0 bg-black/70 flex items-end md:items-center justify-center z-50 md:p-4">
+                    <div className="bg-gray-800 rounded-t-3xl md:rounded-2xl p-5 md:p-6 max-w-md w-full border border-gray-700 shadow-2xl overflow-y-auto">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-xl md:text-2xl font-bold">הגדרות תעריפים</h2>
+                            <button
+                                onClick={onClose}
+                                className="p-2 hover:bg-gray-700 active:bg-gray-600 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {fields.map(field => (
+                                <div key={field.label}>
+                                    <label className="block text-sm font-medium mb-2 text-gray-300">{field.label}</label>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={field.value}
+                                        onChange={(e) => field.setter(e.target.value)}
+                                        className="w-full bg-gray-700 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">{field.hint}</p>
+                                </div>
+                            ))}
+
+                            <p className="text-xs text-gray-500 bg-gray-900/50 rounded-xl p-3 leading-relaxed">
+                                שינוי התעריפים משפיע גם על רישומים קיימים, כך שכל החישובים תמיד לפי התעריף העדכני.
+                            </p>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    ביטול
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-3 rounded-xl font-semibold transition-all transform active:scale-95"
+                                >
+                                    שמור
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<WorkHoursApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
