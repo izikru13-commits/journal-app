@@ -328,6 +328,7 @@ function isBreach(t){
 function posSize(t){ var e=num(t.entry_price), q=num(t.shares); var p=num(t.position_size);
   if(p!==null) return p; return (e!==null&&q!==null)? e*q : null; }
 
+function needsThesis(t){ return !String(t.entry_reason||"").trim() || !String(t.exit_plan||"").trim(); }
 function openTrades(){ return (state.trades||[]).filter(function(t){ return t.status!=="closed"; }); }
 function closedTrades(){ return (state.trades||[]).filter(function(t){ return t.status==="closed"; }); }
 function tradeById(id){ return (state.trades||[]).filter(function(t){ return t.id===id; })[0] || null; }
@@ -478,6 +479,10 @@ function viewDashboard(){
   if(breaches){
     h+='<div class="banner" style="border-color:var(--warn)">'+breaches+' '+(breaches===1?"פוזיציה חצתה":"פוזיציות חצו")+' את הסטופ שהגדרת. פתח אותן ותסגור לפי התוכנית.</div>';
   }
+  var noThesis=open.filter(needsThesis).length;
+  if(noThesis){
+    h+='<p class="note" style="margin-bottom:14px">'+noThesis+' '+(noThesis===1?'פוזיציה פתוחה עדיין בלי':'פוזיציות פתוחות עדיין בלי')+' תזה ותוכנית יציאה. פתח כל אחת, לחץ עריכה, וענה על שתי השאלות — הסימון ייעלם מעצמו.</p>';
+  }
   if(!open.length){
     h+='<div class="empty"><h3>אין פוזיציות פתוחות</h3><p class="tiny" style="margin-bottom:12px">כל עסקה חדשה נפתחת עם שתי תשובות חובה: למה נכנסתי, ומתי אני יוצא.</p>'+
        '<button class="btn btn-primary" data-act="new-trade">פתח עסקה ראשונה</button></div>';
@@ -499,6 +504,8 @@ function posRow(t){
     (t.company_name?'<span class="co">'+esc(t.company_name)+'</span>':'')+
     (t.setup_type?'<span class="pill acc">'+esc(t.setup_type)+'</span>':'')+
     (br?'<span class="pill warn">מתחת לסטופ</span>':'')+
+    (needsThesis(t)?'<span class="pill">חסרה תזה</span>':'')+
+    (t.stop_loss==null?'<span class="pill">ללא סטופ</span>':'')+
     '<span class="pnl '+(p?sign(p.abs):"")+'">'+(p?fmtMoney(p.abs)+" · "+fmtPct(p.pct):'<span class="tiny">ללא מחיר</span>')+'</span></span>'+
     '<span class="line2">'+
       '<span>כניסה <b class="num">'+fmtNum(t.entry_price)+'</b></span>'+
@@ -526,6 +533,7 @@ function viewTrade(id){
       '<span class="pill '+(closed?(num(t.pnl_abs)>0?"gain":"loss"):"acc")+'">'+(closed?"סגורה":"פתוחה")+'</span>'+
       (t.setup_type?'<span class="pill">'+esc(t.setup_type)+'</span>':'')+
       (br&&!closed?'<span class="pill warn">מתחת לסטופ</span>':'')+
+      (!closed&&needsThesis(t)?'<span class="pill">חסרה תזה</span>':'')+
       '<span class="sub">'+esc(t.company_name||"")+'</span></div>';
 
   h+='<div class="stats" style="margin-bottom:18px">';
