@@ -43,6 +43,7 @@
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
 
     html, body {
         margin: 0;
@@ -289,6 +290,121 @@
     @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .speaking { animation: speakPulse 1s ease-out infinite; }
 
+
+    /* ---------- שלב 2: מילים ופירוקן ---------- */
+    .word-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 480px) { .word-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+    @media (min-width: 768px) { .word-grid { grid-template-columns: repeat(5, 1fr); } }
+    .word-card {
+        border-radius: var(--radius); border: 2px solid var(--line); background: var(--card);
+        box-shadow: var(--shadow); padding: 16px 8px;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .word-card.learned { border-color: var(--green-line); }
+    .word-card .emo { font-size: 30px; line-height: 1; }
+    .word-card .w { font-size: 24px; font-weight: 800; }
+
+    .vowel-label { text-align: center; font-weight: 700; color: var(--faint); margin: 24px 0 8px; }
+    .vowel-label:first-child { margin-top: 0; }
+    .vowel-label b { color: var(--violet); font-size: 20px; }
+
+    .chips { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; direction: ltr; }
+    .letter-chip {
+        width: 72px; height: 88px; border-radius: var(--radius);
+        border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow);
+        font-size: 44px; font-weight: 800;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .letter-chip.vowel { border-color: #ddd6fe; background: #f5f3ff; color: var(--violet-dark); }
+
+    .translate-toggle {
+        display: block; margin: 0 auto 16px; border-radius: 999px; padding: 10px 24px;
+        background: var(--line-soft); color: #334155; font-weight: 700;
+    }
+    .he-reveal {
+        text-align: center; font-size: 22px; color: var(--muted);
+        background: var(--line-soft); border-radius: var(--radius); padding: 12px; margin-bottom: 16px;
+    }
+
+    /* ---------- שלב 3: אוצר מילים ---------- */
+    .vocab-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 480px) { .vocab-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+    @media (min-width: 768px) { .vocab-grid { grid-template-columns: repeat(4, 1fr); } }
+    .vocab-card {
+        border-radius: var(--radius); border: 2px solid var(--line); background: var(--card);
+        box-shadow: var(--shadow); padding: 16px 8px;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .vocab-card.learned { border-color: var(--green-line); }
+    .vocab-card .emo { font-size: 40px; line-height: 1; }
+    .vocab-card .w { font-size: 22px; font-weight: 800; line-height: 1.1; }
+    .vocab-card .he { font-size: 15px; color: var(--muted); }
+    .vocab-card .spk { font-size: 18px; color: var(--blue); }
+
+    /* ---------- שלב 4: משפטים ---------- */
+    .sentence-box {
+        background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 24px 16px; margin-bottom: 20px;
+    }
+    .sentence { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; direction: ltr; }
+    .sentence-word {
+        font-size: 28px; font-weight: 700; padding: 8px 12px; border-radius: 12px;
+        border: 2px solid transparent; background: var(--line-soft); color: var(--ink);
+    }
+    .sentence-word:active, .sentence-word.speaking { border-color: var(--blue); background: #eff6ff; }
+    @media (min-width: 768px) { .sentence-word { font-size: 34px; } }
+
+    .play-all {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        margin: 0 auto 16px; background: var(--green); color: #fff;
+        padding: 16px 32px; border-radius: 20px; font-size: 19px; font-weight: 800;
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* סידור משפט */
+    .slot-row {
+        display: flex; flex-wrap: wrap; gap: 8px; direction: ltr; justify-content: center;
+        min-height: 60px; padding: 12px; border-radius: var(--radius);
+        border: 2px dashed var(--line); margin-bottom: 16px;
+    }
+    .slot-row.done { border-color: var(--green-line); background: var(--green-soft); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; direction: ltr; justify-content: center; }
+    .chip {
+        font-size: 22px; font-weight: 700; padding: 10px 16px; border-radius: 12px;
+        background: var(--card); border: 2px solid var(--line); box-shadow: var(--shadow);
+    }
+    .chip.used { opacity: .3; }
+    .chip.wrong { background: var(--rose-soft); border-color: var(--rose-line); color: var(--rose-ink); animation: shake .4s ease-in-out; }
+    .chip.placed { background: #eff6ff; border-color: var(--blue); }
+
+    /* ---------- שלב 5: משחקים ---------- */
+    .pic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 520px; margin: 0 auto; }
+    .pic-option {
+        border-radius: var(--radius); border: 2px solid var(--line); background: var(--card);
+        box-shadow: var(--shadow); padding: 20px 8px;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .pic-option .emo { font-size: 48px; line-height: 1; }
+    .pic-option .he { font-size: 15px; color: var(--muted); }
+    .pic-option.correct { background: var(--green-soft); border-color: var(--green-line); animation: successFlash .45s ease-out; }
+    .pic-option.dim { opacity: .35; }
+
+    .missing-row { display: flex; justify-content: center; gap: 10px; direction: ltr; margin-bottom: 8px; }
+    .slot {
+        width: 72px; height: 88px; border-radius: var(--radius);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 44px; font-weight: 800;
+        border: 2px solid var(--line); background: var(--card); box-shadow: var(--shadow);
+    }
+    .slot.blank { border-style: dashed; border-color: var(--violet); background: #f5f3ff; color: var(--violet); }
+    .slot.filled { border-color: var(--green-line); background: var(--green-soft); color: var(--green-ink); animation: successFlash .45s ease-out; }
+    .word-hint { text-align: center; font-size: 20px; color: var(--muted); margin-bottom: 20px; }
+
+    .stage-done {
+        text-align: center; background: var(--green-soft); border: 2px solid var(--green-line);
+        color: var(--green-ink); border-radius: var(--radius); padding: 16px; margin-top: 24px; font-weight: 700;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     }
@@ -336,15 +452,118 @@
     var STAGES = [
         { id:1, title:'האותיות והצלילים',   short:'אותיות',     emoji:'🔤', ready:true,
           desc:'מכירים את 26 האותיות של האנגלית, איך קוראים להן ואיזה צליל כל אחת עושה.' },
-        { id:2, title:'קוראים מילים קצרות', short:'מילים',      emoji:'🔠', ready:false,
+        { id:2, title:'קוראים מילים קצרות', short:'מילים',      emoji:'🔠', ready:true,
           desc:'מחברים שלוש אותיות למילה: Cat, Dog, Sun. מפרקים כל מילה לצלילים וקוראים אותה יחד.' },
-        { id:3, title:'אוצר מילים בתמונות', short:'אוצר מילים', emoji:'🖼️', ready:false,
+        { id:3, title:'אוצר מילים בתמונות', short:'אוצר מילים', emoji:'🖼️', ready:true,
           desc:'כרטיסיות לימוד עם תמונות: צבעים, מספרים, חיות, משפחה וחפצים בבית.' },
-        { id:4, title:'קוראים משפטים',      short:'משפטים',     emoji:'📖', ready:false,
+        { id:4, title:'קוראים משפטים',      short:'משפטים',     emoji:'📖', ready:true,
           desc:'משפטים קצרים ושימושיים. כל מילה לחיצה — ואפשר לשמוע את כל המשפט לאט.' },
-        { id:5, title:'משחקים ותרגול',      short:'משחקים',     emoji:'🎮', ready:false,
+        { id:5, title:'משחקים ותרגול',      short:'משחקים',     emoji:'🎮', ready:true,
           desc:'חידונים, השלמת אותיות חסרות וצבירת כוכבים על כל תשובה נכונה.' }
     ];
+
+
+    /* מילות CVC — עיצור-תנועה-עיצור, מקובצות לפי התנועה (הקיבוץ הפדגוגי הנכון) */
+    var CVC_WORDS = [
+        { w:'cat', he:'חתול',      emoji:'🐱', v:'a' },
+        { w:'hat', he:'כובע',      emoji:'🎩', v:'a' },
+        { w:'map', he:'מפה',       emoji:'🗺️', v:'a' },
+        { w:'bag', he:'תיק',       emoji:'🎒', v:'a' },
+        { w:'fan', he:'מאוורר',    emoji:'🪭', v:'a' },
+        { w:'red', he:'אדום',      emoji:'🔴', v:'e' },
+        { w:'pen', he:'עט',        emoji:'🖊️', v:'e' },
+        { w:'bed', he:'מיטה',      emoji:'🛏️', v:'e' },
+        { w:'hen', he:'תרנגולת',   emoji:'🐔', v:'e' },
+        { w:'net', he:'רשת',       emoji:'🥅', v:'e' },
+        { w:'big', he:'גדול',      emoji:'🐘', v:'i' },
+        { w:'pig', he:'חזיר',      emoji:'🐷', v:'i' },
+        { w:'six', he:'שש',        emoji:'6️⃣', v:'i' },
+        { w:'pin', he:'סיכה',      emoji:'📌', v:'i' },
+        { w:'kid', he:'ילד',       emoji:'🧒', v:'i' },
+        { w:'dog', he:'כלב',       emoji:'🐶', v:'o' },
+        { w:'box', he:'קופסה',     emoji:'📦', v:'o' },
+        { w:'fox', he:'שועל',      emoji:'🦊', v:'o' },
+        { w:'hot', he:'חם',        emoji:'🔥', v:'o' },
+        { w:'pot', he:'סיר',       emoji:'🍲', v:'o' },
+        { w:'sun', he:'שמש',       emoji:'☀️', v:'u' },
+        { w:'cup', he:'כוס',       emoji:'☕', v:'u' },
+        { w:'bus', he:'אוטובוס',   emoji:'🚌', v:'u' },
+        { w:'run', he:'לרוץ',      emoji:'🏃', v:'u' },
+        { w:'nut', he:'אגוז',      emoji:'🥜', v:'u' }
+    ];
+
+    var VOWEL_NAMES = { a:'a', e:'e', i:'i', o:'o', u:'u' };
+
+    /* אוצר מילים בתמונות, מחולק לקטגוריות */
+    var VOCAB = [
+        { id:'colors', label:'צבעים', emoji:'🎨', items: [
+            { w:'red',    he:'אדום',  emoji:'🔴' }, { w:'blue',   he:'כחול',  emoji:'🔵' },
+            { w:'green',  he:'ירוק',  emoji:'🟢' }, { w:'yellow', he:'צהוב',  emoji:'🟡' },
+            { w:'orange', he:'כתום',  emoji:'🟠' }, { w:'purple', he:'סגול',  emoji:'🟣' },
+            { w:'black',  he:'שחור',  emoji:'⚫' }, { w:'white',  he:'לבן',   emoji:'⚪' },
+            { w:'brown',  he:'חום',   emoji:'🟤' }, { w:'pink',   he:'ורוד',  emoji:'🌸' }
+        ] },
+        { id:'numbers', label:'מספרים', emoji:'🔢', items: [
+            { w:'one',   he:'אחת',   emoji:'1️⃣' }, { w:'two',   he:'שתיים', emoji:'2️⃣' },
+            { w:'three', he:'שלוש',  emoji:'3️⃣' }, { w:'four',  he:'ארבע',  emoji:'4️⃣' },
+            { w:'five',  he:'חמש',   emoji:'5️⃣' }, { w:'six',   he:'שש',    emoji:'6️⃣' },
+            { w:'seven', he:'שבע',   emoji:'7️⃣' }, { w:'eight', he:'שמונה', emoji:'8️⃣' },
+            { w:'nine',  he:'תשע',   emoji:'9️⃣' }, { w:'ten',   he:'עשר',   emoji:'🔟' }
+        ] },
+        { id:'animals', label:'חיות', emoji:'🐾', items: [
+            { w:'cat',   he:'חתול',  emoji:'🐱' }, { w:'dog',    he:'כלב',   emoji:'🐶' },
+            { w:'bird',  he:'ציפור', emoji:'🐦' }, { w:'fish',   he:'דג',    emoji:'🐟' },
+            { w:'horse', he:'סוס',   emoji:'🐴' }, { w:'cow',    he:'פרה',   emoji:'🐄' },
+            { w:'lion',  he:'אריה',  emoji:'🦁' }, { w:'bear',   he:'דוב',   emoji:'🐻' },
+            { w:'duck',  he:'ברווז', emoji:'🦆' }, { w:'monkey', he:'קוף',   emoji:'🐒' }
+        ] },
+        { id:'family', label:'משפחה', emoji:'👨‍👩‍👧', items: [
+            { w:'mother',      he:'אמא',   emoji:'👩' }, { w:'father',      he:'אבא',   emoji:'👨' },
+            { w:'sister',      he:'אחות',  emoji:'👧' }, { w:'brother',     he:'אח',    emoji:'👦' },
+            { w:'baby',        he:'תינוק', emoji:'👶' }, { w:'grandmother', he:'סבתא',  emoji:'👵' },
+            { w:'grandfather', he:'סבא',   emoji:'👴' }, { w:'family',      he:'משפחה', emoji:'👨‍👩‍👧‍👦' }
+        ] },
+        { id:'home', label:'בבית', emoji:'🏠', items: [
+            { w:'table',  he:'שולחן', emoji:'🍽️' }, { w:'chair', he:'כיסא',  emoji:'🪑' },
+            { w:'bed',    he:'מיטה',  emoji:'🛏️' }, { w:'door',  he:'דלת',   emoji:'🚪' },
+            { w:'window', he:'חלון',  emoji:'🪟' }, { w:'book',  he:'ספר',   emoji:'📚' },
+            { w:'cup',    he:'כוס',   emoji:'☕' }, { w:'lamp',  he:'מנורה', emoji:'💡' },
+            { w:'clock',  he:'שעון',  emoji:'🕐' }, { w:'key',   he:'מפתח',  emoji:'🔑' }
+        ] }
+    ];
+
+    /* משפטים — כל מילה נשענת על אוצר המילים של שלבים 2-3 */
+    var SENTENCES = [
+        { words:['I','see','a','red','cat'],        he:'אני רואה חתול אדום' },
+        { words:['This','is','a','big','dog'],      he:'זה כלב גדול' },
+        { words:['The','sun','is','hot'],           he:'השמש חמה' },
+        { words:['I','have','a','blue','pen'],      he:'יש לי עט כחול' },
+        { words:['The','cat','is','on','the','bed'],he:'החתול על המיטה' },
+        { words:['I','see','two','birds'],          he:'אני רואה שתי ציפורים' },
+        { words:['This','is','my','mother'],        he:'זאת אמא שלי' },
+        { words:['The','dog','is','in','the','box'],he:'הכלב בקופסה' },
+        { words:['My','father','has','a','key'],    he:'לאבא שלי יש מפתח' },
+        { words:['The','pig','is','pink'],          he:'החזיר ורוד' },
+        { words:['I','can','see','six','fish'],     he:'אני יכול לראות שישה דגים' },
+        { words:['The','book','is','on','the','table'], he:'הספר על השולחן' }
+    ];
+
+    /* כל מילות התמונות של האפליקציה — הבסיס לחידון של שלב 5 */
+    function allPictureWords() {
+        var out = CVC_WORDS.map(function (x) { return { w:x.w, he:x.he, emoji:x.emoji }; });
+        VOCAB.forEach(function (cat) {
+            cat.items.forEach(function (it) {
+                if (!out.filter(function (o) { return o.w === it.w; }).length) out.push(it);
+            });
+        });
+        return out;
+    }
+
+    /* שליפת נתוני אות מתוך ALPHABET — כדי שצליל האות לא ישוכפל לשום מקום אחר */
+    function letterInfo(ch) {
+        var up = String(ch).toUpperCase();
+        return ALPHABET.filter(function (l) { return l.upper === up; })[0] || null;
+    }
 
     var PRAISE = ['כל הכבוד! 🎉', 'מעולה! ⭐', 'יפה מאוד! 👏', 'נכון מאוד! 🌟', 'אלוף! 💪', 'מדהים! 🚀'];
     function praise() { return PRAISE[Math.floor(Math.random() * PRAISE.length)]; }
@@ -469,6 +688,37 @@
             try { synth.speak(utter); } catch (e) { if (node) node.classList.remove('speaking'); }
         },
 
+        // הקראת רצף — c-a-t ואז cat. לא משתמשים ב-say() כי הוא מבטל את התור בכל קריאה.
+        sequence: function (items, node) {
+            if (!this.supported || !items.length) return;
+            var self = this, i = 0, finished = false;
+            try { window.speechSynthesis.cancel(); } catch (e) { /* noop */ }
+
+            function done() {
+                if (finished) return;
+                finished = true;
+                if (node) node.classList.remove('speaking');
+            }
+            // רשת ביטחון: בדפדפן בלי קולות מותקנים onend עלול לא לירות כלל
+            setTimeout(done, 800 + items.length * 1200);
+
+            function next() {
+                if (finished) return;
+                if (i >= items.length) { done(); return; }
+                var item = items[i++];
+                var utter = new SpeechSynthesisUtterance(String(item.text));
+                if (self.voice) utter.voice = self.voice;
+                utter.lang = (self.voice && self.voice.lang) || 'en-US';
+                utter.rate = typeof item.rate === 'number' ? item.rate : 0.8;
+                utter.onend = function () { setTimeout(next, item.gap || 150); };
+                utter.onerror = function () { setTimeout(next, 60); };
+                try { window.speechSynthesis.speak(utter); } catch (e) { next(); }
+            }
+
+            if (node) node.classList.add('speaking');
+            next();
+        },
+
         // ספארי בנייד חוסם הקראה שלא נובעת ממגע ישיר — משחררים בלחיצה הראשונה
         unlock: function () {
             if (this.supported) {
@@ -493,9 +743,9 @@
 
     var state = {
         screen: 'home',    // 'home' או מספר שלב
-        tab: 'letters',
+        tabs: { 1: 'letters', 2: 'break', 3: 'colors', 4: 'read', 5: 'quiz' },
         stars: 0,
-        learned: []
+        seen: []           // מפתחות ממורחבים: letter:A, word:cat, vocab:red, sentence:3
     };
 
     function load() {
@@ -505,7 +755,13 @@
             if (!raw) return;
             var saved = JSON.parse(raw);
             state.stars = Number(saved.stars) || 0;
-            state.learned = Array.isArray(saved.lettersLearned) ? saved.lettersLearned : [];
+
+            if (Array.isArray(saved.seen)) {
+                state.seen = saved.seen;
+            } else if (Array.isArray(saved.lettersLearned)) {
+                // מיגרציה מהמבנה הישן — משתמש שכבר צבר אותיות לא מאבד אותן
+                state.seen = saved.lettersLearned.map(function (up) { return 'letter:' + up; });
+            }
         } catch (e) { /* התקדמות פגומה או אחסון חסום — מתחילים מאפס */ }
     }
 
@@ -513,8 +769,11 @@
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 stars: state.stars,
-                lettersLearned: state.learned,
-                stageProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+                seen: state.seen,
+                // נשמר גם במבנה הישן, כדי שגרסה קודמת של הדף לא תאבד התקדמות
+                lettersLearned: state.seen
+                    .filter(function (k) { return k.indexOf('letter:') === 0; })
+                    .map(function (k) { return k.slice(7); })
             }));
         } catch (e) { /* אחסון חסום — האתר ממשיך לעבוד, פשוט בלי זיכרון */ }
     }
@@ -525,11 +784,33 @@
         updateHeader();
     }
 
-    function markLearned(upper) {
-        if (state.learned.indexOf(upper) !== -1) return;
-        state.learned.push(upper);
+    function markSeen(key) {
+        if (state.seen.indexOf(key) !== -1) return;
+        state.seen.push(key);
         save();
         updateHeader();
+    }
+
+    function hasSeen(key) { return state.seen.indexOf(key) !== -1; }
+
+    function countSeen(prefix) {
+        return state.seen.filter(function (k) { return k.indexOf(prefix) === 0; }).length;
+    }
+
+    // מד ההתקדמות מותאם לשלב שנמצאים בו
+    function progressFor(screen) {
+        if (screen === 1) return { label: 'אותיות שלמדת', value: countSeen('letter:'), max: ALPHABET.length };
+        if (screen === 2) return { label: 'מילים שקראת',  value: countSeen('word:'),   max: CVC_WORDS.length };
+        if (screen === 3) return { label: 'מילים שלמדת',  value: countSeen('vocab:'),  max: vocabTotal() };
+        if (screen === 4) return { label: 'משפטים שקראת', value: countSeen('sentence:'), max: SENTENCES.length };
+        var total = ALPHABET.length + CVC_WORDS.length + vocabTotal() + SENTENCES.length;
+        return { label: 'התקדמות כללית', value: state.seen.length, max: total };
+    }
+
+    function vocabTotal() {
+        var n = 0;
+        VOCAB.forEach(function (cat) { n += cat.items.length; });
+        return n;
     }
 
     /* =========================================================================
@@ -556,13 +837,17 @@
         var fill = document.getElementById('progress-fill');
         var count = document.getElementById('progress-count');
         var stars = document.getElementById('star-count');
-        if (fill) fill.style.width = Math.round((state.learned.length / ALPHABET.length) * 100) + '%';
-        if (count) count.textContent = state.learned.length + ' / ' + ALPHABET.length;
+        var pr = progressFor(state.screen);
+        var label = document.getElementById('progress-label');
+        if (fill) fill.style.width = (pr.max ? Math.round((pr.value / pr.max) * 100) : 0) + '%';
+        if (count) count.textContent = pr.value + ' / ' + pr.max;
+        if (label) label.textContent = pr.label;
         if (stars) stars.textContent = String(state.stars);
     }
 
     function buildHeader() {
-        var pct = Math.round((state.learned.length / ALPHABET.length) * 100);
+        var pr = progressFor(state.screen);
+        var pct = pr.max ? Math.round((pr.value / pr.max) * 100) : 0;
         return el('header', { class: 'header' },
             el('div', { class: 'header-inner' },
                 el('button', {
@@ -571,9 +856,9 @@
                 }),
                 el('div', { class: 'progress-wrap' },
                     el('div', { class: 'progress-label' },
-                        el('span', { text: 'אותיות שלמדת' }),
+                        el('span', { id: 'progress-label', text: pr.label }),
                         el('b', { id: 'progress-count', dir: 'ltr',
-                                  text: state.learned.length + ' / ' + ALPHABET.length })
+                                  text: pr.value + ' / ' + pr.max })
                     ),
                     el('div', { class: 'progress-track' },
                         el('div', { id: 'progress-fill', class: 'progress-fill', style: 'width:' + pct + '%' })
@@ -606,7 +891,6 @@
     function go(screen) {
         speech.unlock();
         state.screen = screen;
-        if (screen === 1) state.tab = 'letters';
         render();
         window.scrollTo(0, 0);
     }
@@ -624,9 +908,9 @@
                            onclick: function () { go(1); } })
         );
 
-        if (state.stars > 0 || state.learned.length > 0) {
+        if (state.stars > 0 || state.seen.length > 0) {
             home.appendChild(el('p', { class: 'small',
-                text: 'עד עכשיו למדת ' + state.learned.length + ' אותיות ואספת ' + state.stars + ' ⭐' }));
+                text: 'עד עכשיו למדת ' + state.seen.length + ' פריטים ואספת ' + state.stars + ' ⭐' }));
         }
 
         var list = el('div', { class: 'stage-list' });
@@ -649,19 +933,6 @@
     }
 
     /* =========================================================================
-       מסך "בקרוב" לשלבים 2–5
-       ========================================================================= */
-    function buildComingSoon(stage) {
-        return el('div', { class: 'coming' },
-            el('div', { class: 'emo', text: stage.emoji }),
-            el('h2', { text: 'שלב ' + stage.id + ': ' + stage.title }),
-            el('p', { text: stage.desc }),
-            el('div', { class: 'box', text: '🚧 השלב הזה עדיין בבנייה' }),
-            el('p', { class: 'after', text: 'בינתיים כדאי להתאמן בשלב 1 — האותיות הן הבסיס לכל השאר.' })
-        );
-    }
-
-    /* =========================================================================
        שלב 1 — רשת האותיות וכרטיס האות
        ========================================================================= */
 
@@ -669,7 +940,7 @@
         // dir="ltr" חובה: בלי זה האלפבית נקרא הפוך בתוך דף RTL — Cc Bb Aa
         var grid = el('div', { class: 'grid-letters', dir: 'ltr' });
         ALPHABET.forEach(function (letter, i) {
-            var learned = state.learned.indexOf(letter.upper) !== -1;
+            var learned = hasSeen('letter:' + letter.upper);
             var card = el('button', {
                     class: 'letter-card press' + (learned ? ' learned' : ''),
                     'aria-label': 'האות ' + letter.upper,
@@ -688,14 +959,14 @@
         );
     }
 
-    var detailKeyHandler = null;
+    var sheetKeyHandler = null;
 
-    function closeLetter() {
+    function closeSheet() {
         var overlay = document.querySelector('.overlay');
         if (overlay) overlay.parentNode.removeChild(overlay);
-        if (detailKeyHandler) {
-            window.removeEventListener('keydown', detailKeyHandler);
-            detailKeyHandler = null;
+        if (sheetKeyHandler) {
+            window.removeEventListener('keydown', sheetKeyHandler);
+            sheetKeyHandler = null;
         }
     }
 
@@ -703,7 +974,7 @@
         if (index < 0 || index >= ALPHABET.length) return;
         var letter = ALPHABET[index];
 
-        markLearned(letter.upper);
+        markSeen('letter:' + letter.upper);
 
         // מסמנים ✓ על הכרטיס ברשת בלי לבנות את המסך מחדש
         var cards = document.querySelectorAll('.letter-card');
@@ -712,7 +983,7 @@
             cards[index].insertBefore(el('span', { class: 'check', text: '✓' }), cards[index].firstChild);
         }
 
-        closeLetter();
+        closeSheet();
 
         function speakBtn(cls, label, hint, text, rate) {
             var btn = el('button', { class: 'speak-btn press ' + cls },
@@ -735,7 +1006,7 @@
             el('div', { class: 'sheet-head' },
                 el('span', { text: 'אות ' + (index + 1) + ' מתוך ' + ALPHABET.length }),
                 el('button', { class: 'close-btn press', 'aria-label': 'סגירה', text: '✕',
-                               onclick: closeLetter })
+                               onclick: closeSheet })
             ),
             el('div', { class: 'detail-main' },
                 el('div', { class: 'detail-glyph en', text: letter.upper + letter.lower }),
@@ -754,17 +1025,17 @@
         );
 
         var overlay = el('div', { class: 'overlay',
-            onclick: function (e) { if (e.target === overlay) closeLetter(); } }, sheet);
+            onclick: function (e) { if (e.target === overlay) closeSheet(); } }, sheet);
 
         document.body.appendChild(overlay);
         speech.say(letter.name, 0.7);
 
-        detailKeyHandler = function (e) {
-            if (e.key === 'Escape') closeLetter();
+        sheetKeyHandler = function (e) {
+            if (e.key === 'Escape') closeSheet();
             else if (e.key === 'ArrowRight') openLetter(index - 1);
             else if (e.key === 'ArrowLeft') openLetter(index + 1);
         };
-        window.addEventListener('keydown', detailKeyHandler);
+        window.addEventListener('keydown', sheetKeyHandler);
     }
 
     /* =========================================================================
@@ -938,44 +1209,535 @@
         );
     }
 
-    /* =========================================================================
-       שלב 1 — המסך עם שלוש הלשוניות
-       ========================================================================= */
-    var TABS = [
-        { id: 'letters', label: 'האותיות',    emoji: '🔤', build: buildAlphabetGrid },
-        { id: 'match',   label: 'משחק התאמה', emoji: '🧩', build: buildMatchGame },
-        { id: 'listen',  label: 'שמע ובחר',   emoji: '👂', build: buildListenGame }
-    ];
 
-    function buildStage1() {
-        var tabs = el('div', { class: 'tabs' });
-        TABS.forEach(function (tab) {
-            tabs.appendChild(el('button', {
-                    class: 'tab-btn press' + (state.tab === tab.id ? ' active' : ''),
-                    onclick: function () { state.tab = tab.id; render(); }
-                },
-                el('span', { text: tab.emoji }),
-                el('span', { text: tab.label })
-            ));
+    /* =========================================================================
+       שלב 2 — מילים קצרות (CVC)
+       ========================================================================= */
+
+    function isVowel(ch) { return 'aeiou'.indexOf(String(ch).toLowerCase()) !== -1; }
+
+    function openWord(index) {
+        if (index < 0 || index >= CVC_WORDS.length) return;
+        var word = CVC_WORDS[index];
+        markSeen('word:' + word.w);
+
+        // סימון הכרטיס ברשת בלי לבנות את המסך מחדש
+        var cards = document.querySelectorAll('.word-card');
+        if (cards[index]) cards[index].classList.add('learned');
+
+        closeSheet();
+
+        var chars = word.w.split('');
+
+        // כל אות ככפתור נפרד — לחיצה משמיעה את הצליל שלה, לא את שמה
+        var chips = el('div', { class: 'chips' });
+        chars.forEach(function (ch) {
+            var info = letterInfo(ch);
+            var chip = el('button', {
+                class: 'letter-chip press en' + (isVowel(ch) ? ' vowel' : ''),
+                text: ch
+            });
+            chip.addEventListener('click', function () {
+                if (info) speech.say(info.sound, 0.7, chip);
+            });
+            chips.appendChild(chip);
         });
 
-        var active = TABS.filter(function (t) { return t.id === state.tab; })[0] || TABS[0];
-
-        return el('div', { class: 'wrap', style: 'padding-bottom:48px' },
-            el('div', { class: 'stage-head' },
-                el('h2', { text: '🔤 שלב 1: האותיות והצלילים' }),
-                el('p', { text: '26 אותיות — זה כל מה שצריך כדי להתחיל לקרוא' })
-            ),
-            tabs,
-            active.build()
+        var blendBtn = el('button', { class: 'play-all press' },
+            el('span', { text: '🔊' }),
+            el('span', { text: 'חבר את הצלילים' })
         );
+        blendBtn.addEventListener('click', function () {
+            var items = chars.map(function (ch) {
+                var info = letterInfo(ch);
+                return { text: info ? info.sound : ch, rate: 0.7, gap: 200 };
+            });
+            items.push({ text: word.w, rate: 0.75 });
+            speech.sequence(items, blendBtn);
+        });
+
+        var heBox = el('div', { class: 'he-reveal', text: word.he });
+        heBox.hidden = true;
+        var toggle = el('button', { class: 'translate-toggle press', text: '👁️ הצג תרגום' });
+        toggle.addEventListener('click', function () {
+            heBox.hidden = !heBox.hidden;
+            toggle.textContent = heBox.hidden ? '👁️ הצג תרגום' : '🙈 הסתר תרגום';
+        });
+
+        var wordBtn = el('button', { class: 'detail-word en press', text: word.w });
+        wordBtn.addEventListener('click', function () { speech.say(word.w, 0.75, wordBtn); });
+
+        var prevBtn = el('button', { class: 'nav-btn press', text: '→ הקודמת',
+            onclick: function () { openWord(index - 1); } });
+        var nextBtn = el('button', { class: 'nav-btn press', text: 'הבאה ←',
+            onclick: function () { openWord(index + 1); } });
+        if (index === 0) prevBtn.disabled = true;
+        if (index === CVC_WORDS.length - 1) nextBtn.disabled = true;
+
+        var sheet = el('div', { class: 'sheet' },
+            el('div', { class: 'sheet-head' },
+                el('span', { text: 'מילה ' + (index + 1) + ' מתוך ' + CVC_WORDS.length }),
+                el('button', { class: 'close-btn press', 'aria-label': 'סגירה', text: '✕',
+                               onclick: closeSheet })
+            ),
+            el('div', { class: 'detail-main' },
+                el('div', { class: 'detail-emoji', text: word.emoji }),
+                wordBtn
+            ),
+            el('p', { class: 'instruct', text: 'לחץ על כל אות כדי לשמוע את הצליל שלה:' }),
+            chips,
+            blendBtn,
+            toggle,
+            heBox,
+            el('div', { class: 'nav-row' }, prevBtn, nextBtn)
+        );
+
+        var overlay = el('div', { class: 'overlay',
+            onclick: function (e) { if (e.target === overlay) closeSheet(); } }, sheet);
+        document.body.appendChild(overlay);
+
+        sheetKeyHandler = function (e) {
+            if (e.key === 'Escape') closeSheet();
+            else if (e.key === 'ArrowRight') openWord(index - 1);
+            else if (e.key === 'ArrowLeft') openWord(index + 1);
+        };
+        window.addEventListener('keydown', sheetKeyHandler);
+    }
+
+    function buildWordGrid() {
+        var wrap = el('div', null,
+            el('p', { class: 'instruct', text: 'כל מילה בנויה משלושה צלילים. לחץ על מילה כדי לפרק אותה 👇' })
+        );
+
+        // קיבוץ לפי התנועה — כך לומדים לקרוא מילים קצרות
+        ['a', 'e', 'i', 'o', 'u'].forEach(function (vowel) {
+            var words = CVC_WORDS.filter(function (x) { return x.v === vowel; });
+            if (!words.length) return;
+            wrap.appendChild(el('p', { class: 'vowel-label' },
+                'מילים עם התנועה ',
+                el('b', { class: 'en', text: vowel })
+            ));
+            var grid = el('div', { class: 'word-grid', dir: 'ltr' });
+            words.forEach(function (word) {
+                var index = CVC_WORDS.indexOf(word);
+                grid.appendChild(el('button', {
+                        class: 'word-card press' + (hasSeen('word:' + word.w) ? ' learned' : ''),
+                        onclick: function () { openWord(index); }
+                    },
+                    el('span', { class: 'emo', text: word.emoji }),
+                    el('span', { class: 'w en', text: word.w })
+                ));
+            });
+            wrap.appendChild(grid);
+        });
+
+        return wrap;
+    }
+
+    /* תרגול פענוח: רואים מילה כתובה ובוחרים את התמונה — בלי שמע */
+    function buildReadAndPick() {
+        var wordSlot = el('div', { class: 'detail-word en', style: 'font-size:52px;text-align:center;margin-bottom:24px' });
+        var grid = el('div', { class: 'pic-grid' });
+        var footer = el('div', { class: 'center', style: 'margin-top:24px' });
+        var target, solved;
+
+        function nextQuestion() {
+            var options = sample(CVC_WORDS, 4);
+            target = options[Math.floor(Math.random() * options.length)];
+            solved = false;
+            wordSlot.textContent = target.w;
+            grid.textContent = '';
+
+            options.forEach(function (word) {
+                var node = el('button', { class: 'pic-option press' },
+                    el('span', { class: 'emo', text: word.emoji }),
+                    el('span', { class: 'he', text: word.he })
+                );
+                node.addEventListener('click', function () {
+                    if (solved) return;
+                    if (word.w === target.w) {
+                        solved = true;
+                        node.classList.add('correct');
+                        playSuccessTone();
+                        addStar();
+                        toast(praise());
+                        speech.say(target.w, 0.75);
+                        setTimeout(nextQuestion, 1500);
+                    } else {
+                        node.classList.add('dim');
+                        node.disabled = true;
+                    }
+                });
+                grid.appendChild(node);
+            });
+
+            footer.textContent = '';
+            footer.appendChild(el('button', { class: 'ghost-btn press', text: 'מילה אחרת ←',
+                                              onclick: nextQuestion }));
+        }
+
+        nextQuestion();
+
+        return el('div', null,
+            el('div', { class: 'hint-box blue' },
+                el('div', { class: 't', text: 'קרא את המילה ובחר את התמונה' }),
+                el('div', { class: 'd', text: 'נסה לקרוא לבד, בלי לשמוע. פרק את המילה לצלילים בראש.' })
+            ),
+            wordSlot, grid, footer
+        );
+    }
+
+    /* =========================================================================
+       שלב 3 — אוצר מילים בתמונות
+       ========================================================================= */
+    function buildVocabCategory(categoryId) {
+        var category = VOCAB.filter(function (c) { return c.id === categoryId; })[0];
+        var grid = el('div', { class: 'vocab-grid' });
+
+        category.items.forEach(function (item) {
+            var card = el('button', {
+                    class: 'vocab-card press' + (hasSeen('vocab:' + item.w) ? ' learned' : ''),
+                    'aria-label': item.w
+                },
+                el('span', { class: 'emo', text: item.emoji }),
+                el('span', { class: 'w en', text: item.w }),
+                el('span', { class: 'he', text: item.he }),
+                el('span', { class: 'spk', text: '🔊' })
+            );
+            card.addEventListener('click', function () {
+                markSeen('vocab:' + item.w);
+                card.classList.add('learned');
+                speech.say(item.w, 0.8, card);
+            });
+            grid.appendChild(card);
+        });
+
+        return el('div', null,
+            el('p', { class: 'instruct', text: 'לחץ על כרטיסייה כדי לשמוע את המילה 👇' }),
+            grid
+        );
+    }
+
+    /* =========================================================================
+       שלב 4 — קריאת משפטים
+       ========================================================================= */
+    function buildSentenceReader() {
+        var box = el('div', { class: 'sentence-box' });
+        var counter = el('p', { class: 'instruct' });
+        var playBtn = el('button', { class: 'play-all press' },
+            el('span', { text: '🔊' }),
+            el('span', { text: 'נגן את כל המשפט' })
+        );
+        var heBox = el('div', { class: 'he-reveal' });
+        var toggle = el('button', { class: 'translate-toggle press' });
+        var index = 0;
+
+        playBtn.addEventListener('click', function () {
+            // המשפט השלם נקרא לאט — rate 0.8
+            speech.say(SENTENCES[index].words.join(' '), 0.8, playBtn);
+        });
+
+        toggle.addEventListener('click', function () {
+            heBox.hidden = !heBox.hidden;
+            toggle.textContent = heBox.hidden ? '👁️ הצג תרגום' : '🙈 הסתר תרגום';
+        });
+
+        function draw() {
+            var sentence = SENTENCES[index];
+            markSeen('sentence:' + index);
+            counter.textContent = 'משפט ' + (index + 1) + ' מתוך ' + SENTENCES.length +
+                                  ' — לחץ על כל מילה כדי לשמוע אותה לבד';
+            box.textContent = '';
+            var row = el('div', { class: 'sentence' });
+            sentence.words.forEach(function (word) {
+                var btn = el('button', { class: 'sentence-word press en', text: word });
+                btn.addEventListener('click', function () { speech.say(word, 0.75, btn); });
+                row.appendChild(btn);
+            });
+            box.appendChild(row);
+            heBox.textContent = sentence.he;
+            heBox.hidden = true;
+            toggle.textContent = '👁️ הצג תרגום';
+        }
+
+        function move(step) {
+            index = (index + step + SENTENCES.length) % SENTENCES.length;
+            draw();
+        }
+
+        draw();
+
+        return el('div', null,
+            counter, box, playBtn, toggle, heBox,
+            el('div', { class: 'nav-row' },
+                el('button', { class: 'nav-btn press', text: '→ הקודם', onclick: function () { move(-1); } }),
+                el('button', { class: 'nav-btn press', text: 'הבא ←',  onclick: function () { move(1); } })
+            )
+        );
+    }
+
+    /* סידור משפט: מקבלים רק את המילה הנכונה בתור — בלי עונש על טעות */
+    function buildSentenceOrder() {
+        var slots = el('div', { class: 'slot-row' });
+        var chipRow = el('div', { class: 'chip-row' });
+        var footer = el('div', { class: 'center', style: 'margin-top:24px' });
+        var sentence, position;
+
+        function newRound() {
+            sentence = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
+            position = 0;
+            slots.textContent = '';
+            slots.classList.remove('done');
+            chipRow.textContent = '';
+
+            shuffle(sentence.words.map(function (w, i) { return { w: w, i: i }; })).forEach(function (entry) {
+                var chip = el('button', { class: 'chip press en', text: entry.w });
+                chip.addEventListener('click', function () {
+                    if (chip.classList.contains('used')) return;
+                    if (entry.w === sentence.words[position]) {
+                        chip.classList.add('used');
+                        chip.disabled = true;
+                        slots.appendChild(el('span', { class: 'chip placed en', text: entry.w }));
+                        speech.say(entry.w, 0.75);
+                        position++;
+                        if (position === sentence.words.length) {
+                            slots.classList.add('done');
+                            playSuccessTone();
+                            addStar();
+                            toast(praise());
+                            setTimeout(function () {
+                                speech.say(sentence.words.join(' '), 0.8);
+                            }, 400);
+                            setTimeout(newRound, 2600);
+                        }
+                    } else {
+                        chip.classList.add('wrong');
+                        setTimeout(function () { chip.classList.remove('wrong'); }, 450);
+                    }
+                });
+                chipRow.appendChild(chip);
+            });
+
+            footer.textContent = '';
+            footer.appendChild(el('button', { class: 'ghost-btn press', text: '🔄 משפט אחר', onclick: newRound }));
+        }
+
+        newRound();
+
+        return el('div', null,
+            el('div', { class: 'hint-box violet' },
+                el('div', { class: 't', text: 'סדר את המשפט' }),
+                el('div', { class: 'd', text: 'לחץ על המילים לפי הסדר הנכון, משמאל לימין.' })
+            ),
+            slots, chipRow, footer
+        );
+    }
+
+    /* =========================================================================
+       שלב 5 — משחקים ותרגול
+       ========================================================================= */
+
+    /* שומעים מילה, בוחרים את התמונה */
+    function buildPictureQuiz() {
+        var pool = allPictureWords();
+        var grid = el('div', { class: 'pic-grid' });
+        var footer = el('div', { class: 'center', style: 'margin-top:24px' });
+        var listenBtn = el('button', { class: 'listen-btn press' },
+            el('span', { text: '🔊' }),
+            el('span', { text: 'שמע שוב' })
+        );
+        var target, solved, promptTimer;
+
+        listenBtn.addEventListener('click', function () {
+            speech.say(target.w, 0.75, listenBtn);
+        });
+
+        function nextQuestion() {
+            var options = sample(pool, 4);
+            target = options[Math.floor(Math.random() * options.length)];
+            solved = false;
+            grid.textContent = '';
+
+            options.forEach(function (item) {
+                var node = el('button', { class: 'pic-option press' },
+                    el('span', { class: 'emo', text: item.emoji }),
+                    el('span', { class: 'he', text: item.he })
+                );
+                node.addEventListener('click', function () {
+                    if (solved) return;
+                    if (item.w === target.w) {
+                        solved = true;
+                        node.classList.add('correct');
+                        playSuccessTone();
+                        addStar();
+                        toast(praise());
+                        setTimeout(nextQuestion, 1500);
+                    } else {
+                        node.classList.add('dim');
+                        node.disabled = true;
+                    }
+                });
+                grid.appendChild(node);
+            });
+
+            footer.textContent = '';
+            footer.appendChild(el('button', { class: 'ghost-btn press', text: 'שאלה אחרת ←',
+                                              onclick: nextQuestion }));
+
+            if (promptTimer) clearTimeout(promptTimer);
+            promptTimer = setTimeout(function () { speech.say(target.w, 0.75, listenBtn); }, 350);
+        }
+
+        nextQuestion();
+
+        return el('div', null,
+            el('div', { class: 'hint-box violet' },
+                el('div', { class: 't', text: 'איזו תמונה שמעת?' }),
+                el('div', { class: 'd', text: 'הקשב למילה ולחץ על התמונה המתאימה.' })
+            ),
+            el('div', { class: 'center', style: 'margin-bottom:8px' }, listenBtn),
+            grid, footer
+        );
+    }
+
+    /* אות חסרה: C _ T */
+    function buildMissingLetter() {
+        var hint = el('div', { class: 'word-hint' });
+        var row = el('div', { class: 'missing-row' });
+        var options = el('div', { class: 'options-grid' });
+        var footer = el('div', { class: 'center', style: 'margin-top:24px' });
+        var word, hiddenIndex, solved, blankSlot;
+
+        function newRound() {
+            word = CVC_WORDS[Math.floor(Math.random() * CVC_WORDS.length)];
+            hiddenIndex = Math.floor(Math.random() * word.w.length);
+            solved = false;
+
+            hint.textContent = word.emoji + '  ' + word.he;
+            row.textContent = '';
+            word.w.split('').forEach(function (ch, i) {
+                if (i === hiddenIndex) {
+                    blankSlot = el('div', { class: 'slot blank en', text: '?' });
+                    row.appendChild(blankSlot);
+                } else {
+                    row.appendChild(el('div', { class: 'slot en', text: ch }));
+                }
+            });
+
+            // האות הנכונה בתוך שלוש מסיחות
+            var correct = word.w[hiddenIndex];
+            var others = shuffle(ALPHABET.filter(function (l) {
+                return l.lower !== correct;
+            })).slice(0, 3).map(function (l) { return l.lower; });
+            var choices = shuffle(others.concat([correct]));
+
+            options.textContent = '';
+            choices.forEach(function (ch) {
+                var node = el('button', { class: 'option-cell press en', text: ch });
+                node.addEventListener('click', function () {
+                    if (solved) return;
+                    if (ch === correct) {
+                        solved = true;
+                        blankSlot.textContent = ch;
+                        blankSlot.classList.remove('blank');
+                        blankSlot.classList.add('filled');
+                        node.classList.add('correct');
+                        playSuccessTone();
+                        addStar();
+                        toast(praise());
+                        speech.say(word.w, 0.75);
+                        setTimeout(newRound, 1800);
+                    } else {
+                        node.classList.add('dim');
+                        node.disabled = true;
+                    }
+                });
+                options.appendChild(node);
+            });
+
+            footer.textContent = '';
+            footer.appendChild(el('button', { class: 'ghost-btn press', text: 'מילה אחרת ←', onclick: newRound }));
+        }
+
+        newRound();
+
+        return el('div', null,
+            el('div', { class: 'hint-box blue' },
+                el('div', { class: 't', text: 'איזו אות חסרה?' }),
+                el('div', { class: 'd', text: 'התמונה והתרגום עוזרים לך לנחש איזו מילה זאת.' })
+            ),
+            hint, row,
+            el('p', { class: 'instruct', text: 'בחר את האות החסרה:' }),
+            options, footer
+        );
+    }
+
+    /* =========================================================================
+       מסכי השלבים — הגדרה אחת לכל חמשת השלבים
+       ========================================================================= */
+    var STAGE_TABS = {
+        1: [
+            { id: 'letters', label: 'האותיות',    emoji: '🔤', build: buildAlphabetGrid },
+            { id: 'match',   label: 'משחק התאמה', emoji: '🧩', build: buildMatchGame },
+            { id: 'listen',  label: 'שמע ובחר',   emoji: '👂', build: buildListenGame }
+        ],
+        2: [
+            { id: 'break', label: 'פירוק מילים', emoji: '🔠', build: buildWordGrid },
+            { id: 'pick',  label: 'קרא ובחר',   emoji: '🔍', build: buildReadAndPick }
+        ],
+        3: VOCAB.map(function (category) {
+            return {
+                id: category.id, label: category.label, emoji: category.emoji,
+                build: function () { return buildVocabCategory(category.id); }
+            };
+        }),
+        4: [
+            { id: 'read',  label: 'קריאת משפטים', emoji: '📖', build: buildSentenceReader },
+            { id: 'order', label: 'סדר את המשפט', emoji: '🧱', build: buildSentenceOrder }
+        ],
+        5: [
+            { id: 'quiz',    label: 'חידון תמונות', emoji: '🖼️', build: buildPictureQuiz },
+            { id: 'missing', label: 'אות חסרה',     emoji: '🧩', build: buildMissingLetter }
+        ]
+    };
+
+    function buildStage(stageId) {
+        var stage = STAGES.filter(function (x) { return x.id === stageId; })[0];
+        var tabs = STAGE_TABS[stageId];
+        var activeId = state.tabs[stageId];
+        var active = tabs.filter(function (t) { return t.id === activeId; })[0] || tabs[0];
+
+        var screen = el('div', { class: 'wrap', style: 'padding-bottom:48px' },
+            el('div', { class: 'stage-head' },
+                el('h2', { text: stage.emoji + ' שלב ' + stage.id + ': ' + stage.title }),
+                el('p', { text: stage.desc })
+            )
+        );
+
+        // שלב עם לשונית אחת לא צריך שורת לשוניות
+        if (tabs.length > 1) {
+            var row = el('div', { class: 'tabs' });
+            tabs.forEach(function (tab) {
+                row.appendChild(el('button', {
+                        class: 'tab-btn press' + (tab.id === active.id ? ' active' : ''),
+                        onclick: function () { state.tabs[stageId] = tab.id; render(); }
+                    },
+                    el('span', { text: tab.emoji }),
+                    el('span', { text: tab.label })
+                ));
+            });
+            screen.appendChild(row);
+        }
+
+        screen.appendChild(active.build());
+        return screen;
     }
 
     /* =========================================================================
        ציור המסך
        ========================================================================= */
     function render() {
-        closeLetter();
+        closeSheet();
         var app = document.getElementById('app');
         app.textContent = '';
 
@@ -993,12 +1755,7 @@
 
         app.appendChild(buildStageNav());
 
-        if (state.screen === 1) {
-            app.appendChild(buildStage1());
-        } else {
-            var stage = STAGES.filter(function (s) { return s.id === state.screen; })[0];
-            app.appendChild(buildComingSoon(stage));
-        }
+        app.appendChild(buildStage(state.screen));
     }
 
     speech.init();
