@@ -273,7 +273,8 @@ var state = {
   openTradeId:null,
   filters:{ticker:"",setup:"",period:"all",result:"all"},
   importRows:null,
-  pendingRender:false
+  pendingRender:false,
+  canWrite:true, accessChecked:false
 };
 
 /* ---------------- helpers ---------------- */
@@ -368,6 +369,7 @@ async function initDb(){
     return;
   }
   state.db=db; setDbState("ok");
+  probeAccess(db);
   COLS.forEach(function(name){
     try{
       db.collection(name).onSnapshot(function(snap){
@@ -382,6 +384,21 @@ async function initDb(){
       markLoaded("settings");
     }, function(err){ state.settings=state.settings||{}; state.loaded.settings=true; dbFail(err); render(); });
   }catch(e){ state.settings={}; state.loaded.settings=true; dbFail(e); }
+}
+
+/* One tiny write on load tells us whether this viewer may edit at all.
+   A viewer below the write level gets invalid_argument on any write. */
+async function probeAccess(db){
+  try{
+    await db.doc("_access/probe").set({at:nowIso()});
+    state.canWrite=true;
+  }catch(e){
+    var code = e && e.code ? e.code : "";
+    if(code==="invalid_argument"||code==="not_granted"||code==="revoked") state.canWrite=false;
+    else state.canWrite=true;   /* transient trouble — don't cry wolf */
+  }
+  state.accessChecked=true;
+  render();
 }
 
 async function writeDoc(path,data){
@@ -428,7 +445,7 @@ function render(){
   rail.innerHTML=navHtml(v); tabs.innerHTML=navHtml(v);
   var main=document.getElementById("main");
   var fab=document.getElementById("fab");
-  fab.style.display = state.openTradeId ? "none" : "flex";
+  fab.style.display = (state.openTradeId || (state.accessChecked && !state.canWrite)) ? "none" : "flex";
 
   if(state.openTradeId){ main.innerHTML = viewTrade(state.openTradeId); return; }
   var ready = state.loaded.trades && state.loaded.settings;
@@ -449,7 +466,11 @@ function skeleton(){
     '<p class="tiny">טוען נתונים…</p></div>';
 }
 function offBanner(){
-  return state.dbStatus==="off" ? '<div class="banner">אין כרגע גישה לנתונים השמורים. אפשר לעיין בדף, אבל שמירה לא תעבוד עד שההרשאה תחזור.</div>' : "";
+  if(state.dbStatus==="off") return '<div class="banner">אין כרגע גישה לנתונים השמורים. אפשר לעיין בדף, אבל שמירה לא תעבוד עד שההרשאה תחזור.</div>';
+  if(state.accessChecked && !state.canWrite) return '<div class="banner">'+
+    '<b>תצוגה בלבד — עריכה לא תישמר.</b><br>'+
+    'פתחת את הדף דרך קישור שיתוף ולא מהחשבון שלך. היכנס ל-claude.ai באותו דפדפן עם החשבון שבבעלותך, ופתח את האפליקציה משם — אז אפשר יהיה לערוך.</div>';
+  return "";
 }
 
 /* ---------- dashboard ---------- */
