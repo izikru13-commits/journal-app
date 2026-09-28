@@ -1,48 +1,38 @@
 <title>פנקס סוחר</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 :root{
-  --paper:#F1F3F5; --surface:#FFFFFF; --surface-2:#E8ECEF; --surface-3:#DFE5E9;
-  --ink:#16242E; --ink-2:#4A5C68; --ink-3:#7C8C96;
-  --line:#D3DBE0; --line-strong:#B5C2C9;
-  --accent:#0E6E68; --accent-ink:#0B524D; --accent-soft:#D9EAE7;
-  --gain:#1B7A4B; --gain-soft:#DCEFE3;
-  --loss:#B23A2E; --loss-soft:#F7E0DC;
-  --warn:#9E6708; --warn-soft:#F8E9CF;
-  --shadow:0 1px 2px rgba(18,38,50,.07), 0 10px 28px rgba(18,38,50,.06);
-  --radius:10px;
-  --sans:"Assistant","Segoe UI",system-ui,sans-serif;
-  --serif:"Frank Ruhl Libre",Georgia,serif;
+  /* Dark is the default. claude.ai stamps data-theme only on an explicit
+     choice, so the unstamped "system" state lands here — as asked. */
+  --paper:#0B0F14; --surface:#121820; --surface-2:#19212B; --surface-3:#212B37;
+  --ink:#E4EBF1; --ink-2:#94A5B6; --ink-3:#61748A;
+  --line:#222C38; --line-strong:#32404F;
+  --accent:#4C8FD4; --accent-ink:#8FBEEA; --accent-soft:#132538;
+  --gain:#3FB950; --gain-soft:#12301C;
+  --loss:#F0544F; --loss-soft:#351817;
+  --warn:#D9A33A; --warn-soft:#2E2413;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 32px rgba(0,0,0,.34);
+  --radius:6px;
+  --sans:"IBM Plex Sans Hebrew","Segoe UI",system-ui,sans-serif;
+  --serif:"IBM Plex Sans Hebrew","Segoe UI",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#0D1418; --surface:#141F26; --surface-2:#1B2932; --surface-3:#22333D;
-    --ink:#E4EBEE; --ink-2:#A3B4BD; --ink-3:#76888F;
-    --line:#26353E; --line-strong:#3A4D59;
-    --accent:#43B3A8; --accent-ink:#7FD3CA; --accent-soft:#0F2F2D;
-    --gain:#4FBE84; --gain-soft:#0F2C1F;
-    --loss:#E1705F; --loss-soft:#331714;
-    --warn:#D9A23F; --warn-soft:#2C2112;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.28);
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#0D1418; --surface:#141F26; --surface-2:#1B2932; --surface-3:#22333D;
-  --ink:#E4EBEE; --ink-2:#A3B4BD; --ink-3:#76888F;
-  --line:#26353E; --line-strong:#3A4D59;
-  --accent:#43B3A8; --accent-ink:#7FD3CA; --accent-soft:#0F2F2D;
-  --gain:#4FBE84; --gain-soft:#0F2C1F;
-  --loss:#E1705F; --loss-soft:#331714;
-  --warn:#D9A23F; --warn-soft:#2C2112;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.28);
+:root[data-theme="light"]{
+  --paper:#F7F9FB; --surface:#FFFFFF; --surface-2:#EEF2F6; --surface-3:#E1E8EF;
+  --ink:#0E1621; --ink-2:#47586B; --ink-3:#7A8B9C;
+  --line:#DCE3EA; --line-strong:#BDC9D5;
+  --accent:#2C6CB0; --accent-ink:#1E4E82; --accent-soft:#E4EDF7;
+  --gain:#147A3D; --gain-soft:#E3F3E8;
+  --loss:#C0342F; --loss-soft:#FBE7E5;
+  --warn:#9A6B10; --warn-soft:#FAEEDA;
+  --shadow:0 1px 2px rgba(18,38,50,.07), 0 10px 28px rgba(18,38,50,.06);
 }
 *,*::before,*::after{box-sizing:border-box;}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;}
 #app{direction:rtl;min-height:100vh;display:flex;flex-direction:column;}
-h1,h2,h3{font-family:var(--serif);font-weight:700;margin:0;text-wrap:balance;line-height:1.25;}
+h1,h2,h3{font-family:var(--sans);font-weight:600;margin:0;text-wrap:balance;line-height:1.25;letter-spacing:-.01em;}
 p{margin:0;}
 button{font:inherit;color:inherit;cursor:pointer;}
 input,select,textarea{font:inherit;color:inherit;}
@@ -53,7 +43,7 @@ input,select,textarea{font:inherit;color:inherit;}
 .topbar{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);}
 .topbar-in{display:flex;align-items:center;gap:12px;padding-block:10px;padding-inline:16px;max-width:1120px;margin-inline:auto;}
 .brand{display:flex;align-items:baseline;gap:8px;margin-inline-end:auto;min-width:0;}
-.brand b{font-family:var(--serif);font-size:19px;letter-spacing:-.01em;}
+.brand b{font-family:var(--sans);font-weight:600;font-size:18px;letter-spacing:-.01em;}
 .brand span{font-size:11px;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .iconbtn{background:transparent;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;display:grid;place-items:center;color:var(--ink-2);flex:none;}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink);}
@@ -69,9 +59,7 @@ main{min-width:0;}
 .tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 1px;color:var(--ink-3);font-size:10.5px;border-radius:8px;}
 .tabbar button svg{width:19px;height:19px;}
 .tabbar button[aria-current="page"]{color:var(--accent);}
-.fab{position:fixed;bottom:68px;inset-inline-start:16px;z-index:41;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:var(--shadow);display:flex;align-items:center;gap:7px;}
-:root[data-theme="dark"] .fab,:root:not([data-theme="light"]) .fab{color:#06201E;}
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .fab{color:#fff;}}
+.fab{position:fixed;bottom:68px;inset-inline-start:16px;z-index:41;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:11px 17px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:7px;}
 
 @media (min-width:900px){
   .layout{display:grid;grid-template-columns:208px 1fr;gap:28px;padding-block:24px 40px;}
@@ -101,9 +89,7 @@ main{min-width:0;}
 .btn{background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;padding:8px 14px;font-weight:600;color:var(--ink);}
 .btn:hover{border-color:var(--ink-3);}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-:root[data-theme="dark"] .btn-primary{color:#06201E;}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn-primary{color:#06201E;}}
-.btn-primary:hover{filter:brightness(1.07);border-color:var(--accent);}
+.btn-primary:hover{filter:brightness(1.12);border-color:var(--accent);}
 .btn-ghost{background:transparent;border-color:var(--line);}
 .btn-danger{background:transparent;border-color:var(--loss);color:var(--loss);}
 .btn-sm{padding:5px 10px;font-size:13px;border-radius:7px;}
@@ -115,30 +101,63 @@ main{min-width:0;}
 .pill.acc{background:var(--accent-soft);color:var(--accent-ink);}
 
 /* ---------- stat strip ---------- */
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
 .stats .cell{background:var(--surface);padding:13px 14px;display:flex;flex-direction:column;gap:3px;min-width:0;}
 .stats .cell .k{font-size:11.5px;color:var(--ink-3);font-weight:600;}
 .stats .cell .v{font-size:22px;font-weight:600;letter-spacing:-.02em;}
 .stats .cell .n{font-size:11.5px;color:var(--ink-3);}
-@media (min-width:700px){.stats{grid-template-columns:repeat(4,1fr);}}
 
-/* ---------- position rows ---------- */
+/* ---------- position rows: one line, tap to expand ---------- */
 .poslist{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface);}
-.posrow{display:block;width:100%;text-align:start;background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:13px 14px;}
-.posrow:last-child{border-bottom:0;}
+.posgrp{border-bottom:1px solid var(--line);}
+.posgrp:last-child{border-bottom:0;}
+.posrow{display:grid;grid-template-columns:3px 1fr auto auto;align-items:center;
+  width:100%;text-align:start;background:var(--surface);border:0;padding:0;color:inherit;}
 .posrow:hover{background:var(--surface-2);}
-.posrow.breach{box-shadow:inset 3px 0 0 var(--warn);}
-:root #app .posrow.breach{box-shadow:inset -3px 0 0 var(--warn);}
-.posrow .line1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.posrow .tkr{font-family:var(--mono);font-weight:600;font-size:16px;direction:ltr;unicode-bidi:isolate;}
-.posrow .co{font-size:12.5px;color:var(--ink-3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
-.posrow .pnl{margin-inline-start:auto;font-family:var(--mono);font-weight:600;direction:ltr;unicode-bidi:isolate;}
-.posrow .line2{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--ink-2);}
-.posrow .line2 b{font-weight:600;color:var(--ink);}
-.priceedit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 14px;border-top:1px dashed var(--line);background:var(--surface-2);font-size:12.5px;color:var(--ink-2);}
+.posrow .stripe{align-self:stretch;background:transparent;}
+.posrow.s-down .stripe{background:var(--loss);}
+.posrow.s-warn .stripe{background:var(--warn);}
+.posrow .id{display:flex;align-items:center;gap:7px;min-width:0;padding:10px 11px 10px 0;}
+.posrow .tkr{font-family:var(--mono);font-weight:600;font-size:15px;direction:ltr;unicode-bidi:isolate;}
+.posrow .flag{font-size:11.5px;color:var(--warn);flex:none;line-height:1;}
+.posrow .vals{display:flex;flex-direction:column;align-items:flex-end;line-height:1.28;padding:8px 0;}
+.posrow .vpct{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:14.5px;direction:ltr;unicode-bidi:isolate;}
+.posrow .vabs{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-2);direction:ltr;unicode-bidi:isolate;}
+.posrow .chev{color:var(--ink-3);font-size:10px;padding-inline:13px 12px;transition:transform .15s ease;}
+.posrow[aria-expanded="true"] .chev{transform:rotate(-90deg);}
+@media (prefers-reduced-motion:reduce){.posrow .chev{transition:none;}}
+
+/* stop <-> target gauge */
+.gauge{position:relative;height:4px;background:var(--surface-3);border-radius:2px;margin:0 14px 9px;}
+.gauge .fill{position:absolute;top:0;bottom:0;border-radius:2px;}
+.gauge .entry{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--ink-3);}
+.gauge .now{position:absolute;top:50%;width:7px;height:7px;margin-inline-start:-3.5px;border-radius:50%;
+  transform:translateY(-50%);box-shadow:0 0 0 2px var(--surface);}
+.gauge.big{height:6px;margin:4px 0 26px;}
+.gauge.big .now{width:9px;height:9px;margin-inline-start:-4.5px;}
+.gauge .lab{position:absolute;top:13px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+  direction:ltr;unicode-bidi:isolate;white-space:nowrap;}
+
+/* expanded panel */
+.expand{background:var(--surface-2);border-top:1px solid var(--line);padding:13px 14px;display:flex;flex-direction:column;gap:13px;}
+.expand .mini{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 14px;}
+@media (min-width:520px){.expand .mini{grid-template-columns:repeat(4,1fr);}}
+.expand .mini div{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.expand .mini .k{font-size:10.5px;color:var(--ink-3);letter-spacing:.03em;}
+.expand .mini .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px;direction:ltr;unicode-bidi:isolate;}
+.expand .q{font-size:12.5px;color:var(--ink-2);line-height:1.55;}
+.expand .q b{color:var(--ink-3);font-weight:600;font-size:10px;letter-spacing:.08em;display:block;margin-bottom:2px;}
+.expand .q span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.priceedit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);}
 .priceedit label{white-space:nowrap;font-weight:600;}
-.priceedit input{width:104px;flex:none;}
-.priceedit .tiny{white-space:nowrap;}
+.priceedit input{width:112px;flex:none;}
+
+/* needs-attention block */
+.attn{border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;margin-bottom:18px;}
+.attn-head{display:flex;align-items:center;gap:8px;padding:9px 13px;font-size:12.5px;font-weight:600;
+  color:var(--warn);background:var(--warn-soft);border-bottom:1px solid var(--line);}
+.attn .poslist{border:0;border-radius:0;}
+.why{font-size:10.5px;font-weight:600;color:var(--warn);white-space:nowrap;letter-spacing:.02em;}
 
 /* ---------- forms ---------- */
 .field{display:flex;flex-direction:column;gap:5px;min-width:0;}
@@ -157,11 +176,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 
 /* the two questions that gate a trade */
 .gate{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:14px;}
-.gate .gate-title{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--accent-ink);}
+.gate .gate-title{font-size:16px;font-weight:700;color:var(--accent-ink);}
 .gate textarea{min-height:88px;background:var(--surface);border-color:var(--accent);}
 .gate .hint{color:var(--accent-ink);opacity:.85;font-weight:400;}
 .gate label.hint{font-weight:400;font-size:12.5px;}
 
+.rulechk{display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer;line-height:1.45;}
+.rulechk input{accent-color:var(--accent);margin:2px 0 0;flex:none;}
+.rulechk i{font-style:normal;color:var(--ink-3);font-size:11px;}
 .choice{display:flex;gap:8px;flex-wrap:wrap;}
 .choice label{display:flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:600;cursor:pointer;background:var(--surface);}
 .choice input{accent-color:var(--accent);margin:0;}
@@ -208,11 +230,11 @@ td.n,th.n{font-family:var(--mono);direction:ltr;unicode-bidi:isolate;font-varian
 .ruleitem{border-bottom:1px solid var(--line);padding:13px 15px;}
 .ruleitem:last-child{border-bottom:0;}
 .ruleitem.off{opacity:.55;}
-.ruleitem h4{font-family:var(--serif);font-size:16px;margin:0 0 4px;}
+.ruleitem h4{font-size:15px;font-weight:600;margin:0 0 4px;}
 .ruleitem .body{white-space:pre-wrap;font-size:14px;color:var(--ink-2);line-height:1.6;}
 .bigq{background:var(--surface);border:1px solid var(--line);border-inline-start:4px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:15px 16px;}
 .bigq .q{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;margin-bottom:7px;}
-.bigq .a{font-size:17px;line-height:1.65;white-space:pre-wrap;font-family:var(--serif);font-weight:500;}
+.bigq .a{font-size:15.5px;line-height:1.65;white-space:pre-wrap;font-weight:500;}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;}
 .kv dt{color:var(--ink-3);}
 .kv dd{margin:0;font-family:var(--mono);direction:ltr;unicode-bidi:isolate;text-align:start;}
@@ -254,6 +276,7 @@ try{ document.documentElement.setAttribute("dir","rtl"); document.documentElemen
                exit_plan current_price exit_date exit_price exit_reason pnl_abs
                pnl_pct r_multiple followed_rules lesson tags source(chat|manual)
                created_at updated_at
+               ib_contract_id checked_rules
    watchlist : id ticker reason trigger_condition added_at status
    rules     : id title body category active created_at
    journal   : id date body related_trade_id
@@ -274,7 +297,8 @@ var state = {
   filters:{ticker:"",setup:"",period:"all",result:"all"},
   importRows:null,
   pendingRender:false,
-  canWrite:true, accessChecked:false
+  canWrite:true, accessChecked:false,
+  expandedId:null
 };
 
 /* ---------------- helpers ---------------- */
@@ -330,6 +354,7 @@ function posSize(t){ var e=num(t.entry_price), q=num(t.shares); var p=num(t.posi
   if(p!==null) return p; return (e!==null&&q!==null)? e*q : null; }
 
 function needsThesis(t){ return !String(t.entry_reason||"").trim() || !String(t.exit_plan||"").trim(); }
+function needsAction(t){ return isBreach(t) || t.stop_loss==null || needsThesis(t); }
 function openTrades(){ return (state.trades||[]).filter(function(t){ return t.status!=="closed"; }); }
 function closedTrades(){ return (state.trades||[]).filter(function(t){ return t.status==="closed"; }); }
 function tradeById(id){ return (state.trades||[]).filter(function(t){ return t.id===id; })[0] || null; }
@@ -433,7 +458,7 @@ function navHtml(current){
       '<span>'+n.label+'</span></button>';
   }).join("");
 }
-function go(view){ state.view=view; state.openTradeId=null; window.scrollTo(0,0); render(); }
+function go(view){ state.view=view; state.openTradeId=null; state.expandedId=null; window.scrollTo(0,0); render(); }
 
 /* ---------------- render ---------------- */
 function render(){
@@ -497,18 +522,19 @@ function viewDashboard(){
       cell("חורגות מהסטופ", '<span class="'+(breaches?"neg":"")+'"><span class="num">'+breaches+'</span></span>', breaches? "דורש טיפול עכשיו":"אף פוזיציה לא מתחת לסטופ")+
      '</div>';
 
-  if(breaches){
-    h+='<div class="banner" style="border-color:var(--warn)">'+breaches+' '+(breaches===1?"פוזיציה חצתה":"פוזיציות חצו")+' את הסטופ שהגדרת. פתח אותן ותסגור לפי התוכנית.</div>';
-  }
-  var noThesis=open.filter(needsThesis).length;
-  if(noThesis){
-    h+='<p class="note" style="margin-bottom:14px">'+noThesis+' '+(noThesis===1?'פוזיציה פתוחה עדיין בלי':'פוזיציות פתוחות עדיין בלי')+' תזה ותוכנית יציאה. פתח כל אחת, לחץ עריכה, וענה על שתי השאלות — הסימון ייעלם מעצמו.</p>';
-  }
   if(!open.length){
     h+='<div class="empty"><h3>אין פוזיציות פתוחות</h3><p class="tiny" style="margin-bottom:12px">כל עסקה חדשה נפתחת עם שתי תשובות חובה: למה נכנסתי, ומתי אני יוצא.</p>'+
        '<button class="btn btn-primary" data-act="new-trade">פתח עסקה ראשונה</button></div>';
   } else {
-    h+='<div class="poslist">'+open.map(posRow).join("")+'</div>';
+    var attn=open.filter(needsAction), rest=open.filter(function(t){ return !needsAction(t); });
+    if(attn.length){
+      h+='<div class="attn"><div class="attn-head">דורש טיפול · '+attn.length+'</div>'+
+         '<div class="poslist">'+attn.map(posRow).join("")+'</div></div>';
+    }
+    if(rest.length){
+      h+='<div class="eyebrow" style="margin-bottom:8px">פוזיציות · '+rest.length+'</div>'+
+         '<div class="poslist">'+rest.map(posRow).join("")+'</div>';
+    }
   }
   h+='<div class="row" style="margin-top:16px">'+
      '<button class="btn btn-ghost btn-sm" data-act="import-csv">ייבוא CSV מ-Interactive Brokers</button>'+
@@ -517,30 +543,86 @@ function viewDashboard(){
 }
 function cell(k,v,n){ return '<div class="cell"><span class="k">'+esc(k)+'</span><span class="v">'+v+'</span><span class="n">'+esc(n||"")+'</span></div>'; }
 
+/* What is wrong with this position, in one phrase — most urgent first. */
+function whyFlag(t){
+  if(isBreach(t)) return "מתחת לסטופ";
+  if(t.stop_loss==null) return "ללא סטופ";
+  if(needsThesis(t)) return "חסרה תזה";
+  return "";
+}
+
+/* Where price sits between the stop and the target. Without a stop there is
+   no scale to draw against, so the gauge is simply omitted. */
+function gauge(t,big){
+  var e=num(t.entry_price), s=num(t.stop_loss), c=num(t.current_price), d=dirOf(t);
+  var risk=riskPerShare(t);
+  if(e===null||s===null||!risk) return "";
+  var tgt=num(t.target_price), implied=false;
+  if(tgt===null){ tgt=e+d*2*risk; implied=true; }
+  var span=tgt-s;
+  if(span===0) return "";
+  function at(v){ return v===null?null:Math.max(0,Math.min(100,((v-s)/span)*100)); }
+  var pe=at(e), pc=at(c);
+  var up = (c!==null) ? (d*(c-e)>=0) : true;
+  var col = up ? "var(--gain)" : "var(--loss)";
+  var h='<div class="gauge'+(big?" big":"")+'">';
+  if(pc!==null){
+    var lo=Math.min(pe,pc), hi=Math.max(pe,pc);
+    h+='<i class="fill" style="inset-inline-start:'+lo+'%;width:'+(hi-lo)+'%;background:'+col+';opacity:.55"></i>';
+  }
+  h+='<i class="entry" style="inset-inline-start:'+pe+'%"></i>';
+  if(pc!==null) h+='<i class="now" style="inset-inline-start:'+pc+'%;background:'+col+'"></i>';
+  if(big){
+    h+='<span class="lab" style="inset-inline-start:0">'+fmtNum(s)+'</span>'+
+       '<span class="lab" style="inset-inline-end:0">'+fmtNum(tgt)+(implied?" ·2R":"")+'</span>';
+  }
+  return h+'</div>';
+}
+
+function mini(k,v){ return '<div><span class="k">'+esc(k)+'</span><span class="v">'+v+'</span></div>'; }
+
+function expandPanel(t){
+  var p=openPnl(t), risk=riskPerShare(t), q=num(t.shares);
+  var h='<div class="expand">'+gauge(t,true)+'<div class="mini">'+
+    mini("כניסה",fmtNum(t.entry_price))+
+    mini("כמות",fmtNum(t.shares,0))+
+    mini("סטופ", t.stop_loss!=null?fmtNum(t.stop_loss):'<span class="why">חסר</span>')+
+    mini("יעד", t.target_price!=null?fmtNum(t.target_price):"—")+
+    mini("גודל",fmtMoney(posSize(t),0))+
+    mini("R נוכחי",(p&&p.r!==null)?fmtR(p.r):"—")+
+    mini("סיכון",(risk&&q)?fmtMoney(risk*q,0):"—")+
+    mini("נכנסה",dateOnly(t.entry_date))+
+    '</div>';
+  h+='<div class="priceedit" data-nofresh><label for="cp-'+esc(t.id)+'">מחיר נוכחי</label>'+
+     '<input type="number" step="any" id="cp-'+esc(t.id)+'" value="'+(t.current_price!=null?esc(t.current_price):"")+'" placeholder="—" data-price-for="'+esc(t.id)+'">'+
+     '<button class="btn btn-sm" data-act="save-price" data-id="'+esc(t.id)+'">עדכן</button>'+
+     (t.setup_type?'<span class="pill acc" style="margin-inline-start:auto">'+esc(t.setup_type)+'</span>':'')+
+     '</div>';
+  h+='<div class="q"><b>למה נכנסתי</b><span>'+esc(t.entry_reason||"לא תועד")+'</span></div>'+
+     '<div class="q"><b>מתי אני יוצא</b><span>'+esc(t.exit_plan||"לא תועד")+'</span></div>';
+  h+='<div class="row" style="gap:8px">'+
+     '<button class="btn btn-primary btn-sm" data-act="close-trade" data-id="'+esc(t.id)+'">סגור עסקה</button>'+
+     '<button class="btn btn-sm" data-act="edit-trade" data-id="'+esc(t.id)+'">עריכה</button>'+
+     '<button class="btn btn-ghost btn-sm" data-open-trade="'+esc(t.id)+'">מסך מלא</button></div>';
+  return h+'</div>';
+}
+
 function posRow(t){
-  var p=openPnl(t), br=isBreach(t);
-  var ps=posSize(t);
-  var h='<button type="button" class="posrow'+(br?" breach":"")+'" data-open-trade="'+esc(t.id)+'">'+
-    '<span class="line1"><span class="tkr">'+esc(t.ticker||"—")+'</span>'+
-    (t.company_name?'<span class="co">'+esc(t.company_name)+'</span>':'')+
-    (t.setup_type?'<span class="pill acc">'+esc(t.setup_type)+'</span>':'')+
-    (br?'<span class="pill warn">מתחת לסטופ</span>':'')+
-    (needsThesis(t)?'<span class="pill">חסרה תזה</span>':'')+
-    (t.stop_loss==null?'<span class="pill">ללא סטופ</span>':'')+
-    '<span class="pnl '+(p?sign(p.abs):"")+'">'+(p?fmtMoney(p.abs)+" · "+fmtPct(p.pct):'<span class="tiny">ללא מחיר</span>')+'</span></span>'+
-    '<span class="line2">'+
-      '<span>כניסה <b class="num">'+fmtNum(t.entry_price)+'</b></span>'+
-      '<span>כמות <b class="num">'+fmtNum(t.shares,0)+'</b></span>'+
-      '<span>סטופ <b class="num">'+fmtNum(t.stop_loss)+'</b></span>'+
-      (t.target_price?'<span>יעד <b class="num">'+fmtNum(t.target_price)+'</b></span>':'')+
-      (ps!==null?'<span>גודל <b class="num">'+fmtMoney(ps,0)+'</b></span>':'')+
-      (p&&p.r!==null?'<span>מצב <b class="num">'+fmtR(p.r)+'</b></span>':'')+
-    '</span></button>'+
-    '<div class="priceedit" data-nofresh><label for="cp-'+esc(t.id)+'">מחיר נוכחי</label>'+
-      '<input type="number" step="any" id="cp-'+esc(t.id)+'" value="'+(t.current_price!=null?esc(t.current_price):"")+'" placeholder="—" data-price-for="'+esc(t.id)+'">'+
-      '<button class="btn btn-sm" data-act="save-price" data-id="'+esc(t.id)+'">עדכן</button>'+
-      '<span class="tiny" style="margin-inline-start:auto">נכנסה <span class="num">'+esc(dateOnly(t.entry_date))+'</span></span></div>';
-  return h;
+  var p=openPnl(t), br=isBreach(t), why=whyFlag(t);
+  var isOpen = state.expandedId===t.id;
+  var cls = br ? " s-down" : (why ? " s-warn" : "");
+  return '<div class="posgrp">'+
+    '<button type="button" class="posrow'+cls+'" data-toggle-trade="'+esc(t.id)+'" aria-expanded="'+(isOpen?"true":"false")+'">'+
+      '<span class="stripe"></span>'+
+      '<span class="id"><span class="tkr">'+esc(t.ticker||"—")+'</span>'+
+        (why?'<span class="why">'+esc(why)+'</span>':'')+'</span>'+
+      '<span class="vals">'+(p
+        ? '<span class="vpct '+sign(p.pct)+'">'+fmtPct(p.pct)+'</span><span class="vabs">'+fmtMoney(p.abs)+'</span>'
+        : '<span class="vabs">ללא מחיר</span>')+'</span>'+
+      '<span class="chev">◀</span>'+
+    '</button>'+
+    (isOpen ? expandPanel(t) : gauge(t,false))+
+    '</div>';
 }
 
 /* ---------- single trade ---------- */
@@ -689,18 +771,72 @@ function bar(label,value,max,color,text){
     '<i style="'+(neg?"inset-inline-end:50%":"inset-inline-start:50%")+';width:'+(pct/2)+'%;background:'+color+'"></i></span>'+
     '<span class="bar-val '+(neg?"neg":"pos")+'">'+esc(text)+'</span></div>';
 }
+/* Expectancy in R: (win% x avg win R) - (loss% x avg loss R).
+   The single number that answers "does this system have an edge". */
+function expectancyR(rows){
+  var rs=rows.map(function(t){ return num(t.r_multiple); }).filter(function(x){ return x!==null; });
+  if(!rs.length) return null;
+  var w=rs.filter(function(r){ return r>0; }), l=rs.filter(function(r){ return r<=0; });
+  var pw=w.length/rs.length;
+  var aw=w.length? w.reduce(function(a,b){ return a+b; },0)/w.length : 0;
+  var al=l.length? Math.abs(l.reduce(function(a,b){ return a+b; },0)/l.length) : 0;
+  return pw*aw-(1-pw)*al;
+}
+
+/* Cumulative R over closed trades. Time runs left to right — the convention
+   every charting platform uses, RTL page or not. */
+function equityCurve(rows){
+  var cum=0, pts=[];
+  rows.slice().sort(function(a,b){ return String(a.exit_date||"").localeCompare(String(b.exit_date||"")); })
+    .forEach(function(t){ var r=num(t.r_multiple); if(r===null) return; cum+=r; pts.push(cum); });
+  if(pts.length<2){
+    return '<div class="card pad"><div class="eyebrow" style="margin-bottom:6px">עקומת הון</div>'+
+      '<p class="tiny">צריך לפחות שתי עסקאות סגורות עם סטופ מתועד. עסקאות בלי סטופ לא מייצרות R ולא נכנסות לעקומה.</p></div>';
+  }
+  var W=600,H=120,pad=12;
+  var lo=Math.min(0,Math.min.apply(null,pts)), hi=Math.max(0,Math.max.apply(null,pts));
+  var span=(hi-lo)||1;
+  function X(i){ return pad+(i/(pts.length-1))*(W-2*pad); }
+  function Y(v){ return pad+(1-(v-lo)/span)*(H-2*pad); }
+  var line=pts.map(function(v,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1); }).join(" ");
+  var area=line+" L"+X(pts.length-1).toFixed(1)+" "+Y(lo).toFixed(1)+" L"+X(0).toFixed(1)+" "+Y(lo).toFixed(1)+" Z";
+  var last=pts[pts.length-1];
+  var col=last>=0?"var(--gain)":"var(--loss)", fill=last>=0?"var(--gain-soft)":"var(--loss-soft)";
+  return '<div class="card pad">'+
+    '<div class="row" style="align-items:baseline;gap:10px;margin-bottom:8px">'+
+      '<span class="eyebrow">עקומת הון</span><span class="tiny">'+pts.length+' עסקאות עם R</span>'+
+      '<span class="num '+sign(last)+'" style="margin-inline-start:auto;font-weight:600">'+fmtR(last)+'</span></div>'+
+    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:100%;display:block" role="img" aria-label="R מצטבר לאורך זמן">'+
+      '<path d="'+area+'" fill="'+fill+'"/>'+
+      '<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="'+W+'" y2="'+Y(0).toFixed(1)+'" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="4 4"/>'+
+      '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '<circle cx="'+X(pts.length-1).toFixed(1)+'" cy="'+Y(last).toFixed(1)+'" r="3.5" fill="'+col+'"/>'+
+    '</svg>'+
+    '<div class="row" style="justify-content:space-between;margin-top:4px">'+
+      '<span class="tiny">שיא <span class="num">'+fmtR(hi)+'</span></span>'+
+      '<span class="tiny">שפל <span class="num">'+fmtR(lo)+'</span></span></div></div>';
+}
+
 function viewStats(){
   var rows=closedTrades();
   var h=offBanner();
   h+='<div class="section-head"><h2>סטטיסטיקה</h2><span class="sub">'+rows.length+' עסקאות סגורות</span></div>';
   if(!rows.length) return h+'<div class="empty"><h3>עדיין אין עסקאות סגורות</h3><p class="tiny">הסטטיסטיקה נבנית מעסקאות שנסגרו. סגור עסקה ראשונה או ייבא היסטוריה מהברוקר.</p></div>';
-  var a=agg(rows);
-  h+='<div class="stats" style="margin-bottom:22px">'+
+  var a=agg(rows), ex=expectancyR(rows);
+  /* Expectancy in R is by definition the mean R, so show it in money too —
+     the average risk per trade turns it into "what a trade is worth". */
+  var risks=rows.map(function(t){ var r=riskPerShare(t), q=num(t.shares); return (r&&q)?r*q:null; })
+                .filter(function(x){ return x!==null; });
+  var avgRisk=risks.length? risks.reduce(function(p,c){ return p+c; },0)/risks.length : null;
+  h+='<div class="stats" style="margin-bottom:18px">'+
+     cell("תוחלת לעסקה", '<span class="num '+sign(ex)+'">'+fmtR(ex)+'</span>',
+       (ex!==null&&avgRisk)? "כ-"+fmtMoney(ex*avgRisk,0)+" לעסקה" : (ex===null?"צריך R מתועד":"אין סיכון מתועד"))+
+     cell("סך R", '<span class="num '+sign(a.totalR)+'">'+fmtR(a.totalR)+'</span>', "מצטבר על כל העסקאות")+
      cell("אחוז מרוויחות", '<span class="num">'+fmtNum(a.winRate,0)+'%</span>', a.wins+" מרוויחות / "+a.losses+" מפסידות")+
-     cell("ממוצע R", '<span class="num '+sign(a.avgR)+'">'+fmtR(a.avgR)+'</span>', a.totalR!==null? "סך הכל "+fmtR(a.totalR) : "—")+
      cell("רווח ממוצע ÷ הפסד ממוצע", '<span class="num">'+(a.ratio!==null?fmtNum(a.ratio,2):"—")+'</span>', (a.avgWin!==null?fmtMoney(a.avgWin,0):"—")+" מול "+(a.avgLoss!==null?fmtMoney(a.avgLoss,0):"—"))+
      cell("סך רווח/הפסד", '<span class="num '+sign(a.total)+'">'+fmtMoney(a.total,0)+'</span>', "ממוצע לעסקה "+fmtPct(a.avgPct))+
      '</div>';
+  h+='<div style="margin-bottom:22px">'+equityCurve(rows)+'</div>';
 
   /* discipline */
   var withFlag=rows.filter(function(t){ return t.followed_rules===true||t.followed_rules===false; });
@@ -817,6 +953,23 @@ function openModal(html,wide){
 function closeModal(){ document.getElementById("modal-root").innerHTML=""; document.body.style.overflow=""; }
 function head(title){ return '<div class="modal-head"><h3>'+esc(title)+'</h3><button class="iconbtn" data-act="close-modal" aria-label="סגור">✕</button></div>'; }
 
+/* The active rules, as a checklist inside the new-trade form. Ticking is
+   recorded, never required — only the six mandatory fields block a save. */
+function rulesChecklist(t){
+  var act=(state.rules||[]).filter(function(r){ return r.active!==false; });
+  if(!act.length) return "";
+  var pre = (t && Array.isArray(t.checked_rules)) ? t.checked_rules : [];
+  return '<div class="card pad" style="background:var(--surface-2)">'+
+    '<div class="row" style="align-items:baseline;gap:8px;margin-bottom:9px">'+
+      '<span class="eyebrow">הכללים שלך</span>'+
+      '<span class="tiny">הסימון מתועד, לא חוסם שמירה</span></div>'+
+    '<div class="stack" style="gap:7px">'+
+    act.map(function(r){
+      return '<label class="rulechk"><input type="checkbox" data-rule="'+esc(r.id)+'"'+(pre.indexOf(r.id)>=0?" checked":"")+'>'+
+        '<span>'+esc(r.title||"ללא כותרת")+(r.category?' <i>'+esc(r.category)+'</i>':'')+'</span></label>';
+    }).join("")+'</div></div>';
+}
+
 /* ---- trade form (new / edit) ---- */
 function tradeForm(t){
   t=t||{};
@@ -847,6 +1000,7 @@ function tradeForm(t){
       '<textarea id="tf-exitplan" required rows="4">'+esc(t.exit_plan||"")+'</textarea></div>'+
       '<p class="hint">בלי שתי התשובות האלה אי אפשר לשמור את העסקה.</p>'+
     '</div>'+
+    rulesChecklist(t)+
 
     '<div class="grid2">'+
       '<div class="field"><label for="tf-date">תאריך כניסה</label><input type="date" id="tf-date" value="'+esc(dateOnly(t.entry_date)!=="—"?dateOnly(t.entry_date):today())+'"></div>'+
@@ -893,6 +1047,8 @@ async function saveTrade(){
     var first = !reason ? $("#tf-reason") : (!plan ? $("#tf-exitplan") : $("#tf-ticker")); if(first) first.focus(); return; }
   err.hidden=true;
   var tags=($("#tf-tags").value||"").split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+  var checked=[].slice.call(document.querySelectorAll('#trade-form [data-rule]:checked'))
+    .map(function(x){ return x.getAttribute("data-rule"); });
   var docId = existing ? (existing.__docid||existing.id) : newId("t");
   var rec = Object.assign({}, existing||{}, {
     id: existing? existing.id : docId,
@@ -905,7 +1061,7 @@ async function saveTrade(){
     setup_type:$("#tf-setup").value||"",
     entry_reason:reason, exit_plan:plan,
     current_price:num($("#tf-current").value),
-    tags:tags,
+    tags:tags, checked_rules:checked,
     source: existing? (existing.source||"manual") : "manual",
     created_at: existing? (existing.created_at||nowIso()) : nowIso(),
     updated_at: nowIso()
@@ -1243,11 +1399,13 @@ async function doImport(){
 
 /* ---------------- events ---------------- */
 document.addEventListener("click", function(ev){
-  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade]");
+  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade],[data-toggle-trade]");
   if(ev.target.matches("[data-overlay]")){ closeModal(); return; }
   if(!el) return;
   var nav=el.getAttribute("data-nav");
   if(nav){ closeModal(); go(nav); return; }
+  var tg=el.getAttribute("data-toggle-trade");
+  if(tg){ state.expandedId = (state.expandedId===tg) ? null : tg; render(); return; }
   var ot=el.getAttribute("data-open-trade");
   if(ot){ state.openTradeId=ot; window.scrollTo(0,0); render(); return; }
   var act=el.getAttribute("data-act"), id=el.getAttribute("data-id");
