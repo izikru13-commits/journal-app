@@ -298,7 +298,8 @@ var state = {
   importRows:null,
   pendingRender:false,
   canWrite:true, accessChecked:false,
-  expandedId:null
+  expandedId:null,
+  benchmark:null, curveMode:"money"
 };
 
 /* ---------------- helpers ---------------- */
@@ -352,6 +353,40 @@ function isBreach(t){
 }
 function posSize(t){ var e=num(t.entry_price), q=num(t.shares); var p=num(t.position_size);
   if(p!==null) return p; return (e!==null&&q!==null)? e*q : null; }
+
+/* ---- SPY benchmark ----------------------------------------------------
+   The page has no network access, so SPY's daily closes live in the store at
+   benchmark/spy, refreshed from a chat session. When that document is missing
+   or does not span a trade's dates, the comparison is reported unavailable —
+   never estimated. */
+function spyBars(){ var b=state.benchmark; return (b&&Array.isArray(b.bars)&&b.bars.length)?b.bars:null; }
+function spyAt(d){
+  var bars=spyBars(); if(!bars||!d) return null;
+  d=String(d).slice(0,10);
+  if(d<bars[0].d) return null;            /* earlier than our history */
+  var lo=0, hi=bars.length-1, best=null;  /* last bar on or before d */
+  while(lo<=hi){ var m=(lo+hi)>>1; if(bars[m].d<=d){ best=bars[m]; lo=m+1; } else hi=m-1; }
+  return best? num(best.c) : null;
+}
+function spyReturn(from,to){
+  var a=spyAt(from), b=spyAt(to);
+  if(a===null||b===null||!a) return null;
+  return ((b-a)/a)*100;
+}
+/* One trade measured against SPY over that trade's own holding window. */
+function benchOf(t,asOf){
+  var to = t.status==="closed" ? t.exit_date : (asOf||today());
+  if(!t.entry_date||!to) return null;
+  var sp=spyReturn(t.entry_date,to);
+  if(sp===null) return null;
+  var p=openPnl(t);
+  var mine = t.status==="closed" ? num(t.pnl_pct) : (p?p.pct:null);
+  var mineAbs = t.status==="closed" ? num(t.pnl_abs) : (p?p.abs:null);
+  var size=posSize(t);
+  return { spyPct:sp, mine:mine, mineAbs:mineAbs,
+           alpha: mine===null?null:mine-sp,
+           spyPnl: size===null?null:size*sp/100 };
+}
 
 function needsThesis(t){ return !String(t.entry_reason||"").trim() || !String(t.exit_plan||"").trim(); }
 function needsAction(t){ return isBreach(t) || t.stop_loss==null || needsThesis(t); }
@@ -409,6 +444,14 @@ async function initDb(){
       markLoaded("settings");
     }, function(err){ state.settings=state.settings||{}; state.loaded.settings=true; dbFail(err); render(); });
   }catch(e){ state.settings={}; state.loaded.settings=true; dbFail(e); }
+  /* SPY daily closes, kept in the store because the page cannot reach the
+     network. Absent is a normal state, not an error. */
+  try{
+    db.doc("benchmark/spy").onSnapshot(function(snap){
+      state.benchmark = snap.exists ? (snap.data()||null) : null;
+      render();
+    }, function(){ state.benchmark=null; render(); });
+  }catch(e){ state.benchmark=null; }
 }
 
 /* One tiny write on load tells us whether this viewer may edit at all.
@@ -783,38 +826,138 @@ function expectancyR(rows){
   return pw*aw-(1-pw)*al;
 }
 
-/* Cumulative R over closed trades. Time runs left to right — the convention
-   every charting platform uses, RTL page or not. */
+/* Cumulative per-trade result, with SPY over the same holding windows laid on
+   top. Summing per-trade returns is not a portfolio return — but both series
+   are summed the same way, so the comparison is like for like. Time runs left
+   to right, the convention every charting platform uses, RTL page or not. */
 function equityCurve(rows){
-  var cum=0, pts=[];
-  rows.slice().sort(function(a,b){ return String(a.exit_date||"").localeCompare(String(b.exit_date||"")); })
-    .forEach(function(t){ var r=num(t.r_multiple); if(r===null) return; cum+=r; pts.push(cum); });
-  if(pts.length<2){
-    return '<div class="card pad"><div class="eyebrow" style="margin-bottom:6px">עקומת הון</div>'+
-      '<p class="tiny">צריך לפחות שתי עסקאות סגורות עם סטופ מתועד. עסקאות בלי סטופ לא מייצרות R ולא נכנסות לעקומה.</p></div>';
+  var mode = state.curveMode==="R" ? "R" : "money";
+  var seq=rows.slice().sort(function(a,b){ return String(a.exit_date||"").localeCompare(String(b.exit_date||"")); });
+  var mine=[], spy=[], cm=0, cs=0, missing=0;
+  seq.forEach(function(t){
+    var v = mode==="R" ? num(t.r_multiple) : num(t.pnl_abs);
+    if(v===null) return;
+    cm+=v; mine.push(cm);
+    if(mode==="money"){
+      var b=benchOf(t);
+      if(b&&b.spyPnl!==null) cs+=b.spyPnl; else missing++;
+      spy.push(cs);
+    }
+  });
+  var fv=function(v){ return mode==="R"? fmtR(v) : fmtMoney(v,0); };
+  var head='<div class="row" style="align-items:baseline;gap:10px;margin-bottom:10px">'+
+    '<span class="eyebrow">עקומת הון</span><span class="tiny">'+mine.length+' עסקאות</span>'+
+    '<span class="row" style="gap:6px;margin-inline-start:auto">'+
+      '<button class="btn btn-sm '+(mode==="money"?"btn-primary":"btn-ghost")+'" data-curve="money">כסף</button>'+
+      '<button class="btn btn-sm '+(mode==="R"?"btn-primary":"btn-ghost")+'" data-curve="R">R</button></span></div>';
+  if(mine.length<2){
+    return '<div class="card pad">'+head+'<p class="tiny">'+(mode==="R"
+      ? 'רק '+mine.length+' עסקאות סגורות מכילות R — לשאר לא תועד סטופ. עבור לכסף כדי לראות את כולן.'
+      : 'צריך לפחות שתי עסקאות סגורות.')+'</p></div>';
   }
-  var W=600,H=120,pad=12;
-  var lo=Math.min(0,Math.min.apply(null,pts)), hi=Math.max(0,Math.max.apply(null,pts));
-  var span=(hi-lo)||1;
-  function X(i){ return pad+(i/(pts.length-1))*(W-2*pad); }
+  var hasSpy = mode==="money" && spy.length===mine.length && missing<mine.length;
+  var all=mine.concat(hasSpy?spy:[]);
+  var lo=Math.min(0,Math.min.apply(null,all)), hi=Math.max(0,Math.max.apply(null,all));
+  var span=(hi-lo)||1, W=600,H=150,pad=12;
+  function X(i,n){ return pad+(i/(n-1))*(W-2*pad); }
   function Y(v){ return pad+(1-(v-lo)/span)*(H-2*pad); }
-  var line=pts.map(function(v,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1); }).join(" ");
-  var area=line+" L"+X(pts.length-1).toFixed(1)+" "+Y(lo).toFixed(1)+" L"+X(0).toFixed(1)+" "+Y(lo).toFixed(1)+" Z";
-  var last=pts[pts.length-1];
+  function d(a){ return a.map(function(v,i){ return (i?"L":"M")+X(i,a.length).toFixed(1)+" "+Y(v).toFixed(1); }).join(" "); }
+  var mLine=d(mine), last=mine[mine.length-1];
   var col=last>=0?"var(--gain)":"var(--loss)", fill=last>=0?"var(--gain-soft)":"var(--loss-soft)";
-  return '<div class="card pad">'+
-    '<div class="row" style="align-items:baseline;gap:10px;margin-bottom:8px">'+
-      '<span class="eyebrow">עקומת הון</span><span class="tiny">'+pts.length+' עסקאות עם R</span>'+
-      '<span class="num '+sign(last)+'" style="margin-inline-start:auto;font-weight:600">'+fmtR(last)+'</span></div>'+
-    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:100%;display:block" role="img" aria-label="R מצטבר לאורך זמן">'+
+  var area=mLine+" L"+X(mine.length-1,mine.length).toFixed(1)+" "+Y(lo).toFixed(1)+" L"+X(0,mine.length).toFixed(1)+" "+Y(lo).toFixed(1)+" Z";
+  var sLast = hasSpy? spy[spy.length-1] : null;
+  return '<div class="card pad">'+head+
+    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:100%;display:block" role="img" aria-label="תוצאה מצטברת לאורך זמן מול SPY">'+
       '<path d="'+area+'" fill="'+fill+'"/>'+
       '<line x1="0" y1="'+Y(0).toFixed(1)+'" x2="'+W+'" y2="'+Y(0).toFixed(1)+'" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="4 4"/>'+
-      '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
-      '<circle cx="'+X(pts.length-1).toFixed(1)+'" cy="'+Y(last).toFixed(1)+'" r="3.5" fill="'+col+'"/>'+
+      (hasSpy?'<path d="'+d(spy)+'" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>':'')+
+      '<path d="'+mLine+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '<circle cx="'+X(mine.length-1,mine.length).toFixed(1)+'" cy="'+Y(last).toFixed(1)+'" r="4" fill="'+col+'"/>'+
+      (hasSpy?'<circle cx="'+X(spy.length-1,spy.length).toFixed(1)+'" cy="'+Y(sLast).toFixed(1)+'" r="3" fill="var(--ink-3)"/>':'')+
     '</svg>'+
-    '<div class="row" style="justify-content:space-between;margin-top:4px">'+
-      '<span class="tiny">שיא <span class="num">'+fmtR(hi)+'</span></span>'+
-      '<span class="tiny">שפל <span class="num">'+fmtR(lo)+'</span></span></div></div>';
+    '<div class="row" style="gap:14px;margin-top:8px;font-size:12px">'+
+      '<span class="tiny"><b style="color:'+col+'">■</b> המסחר שלך <span class="num '+sign(last)+'">'+fv(last)+'</span></span>'+
+      (hasSpy?'<span class="tiny"><b style="color:var(--ink-3)">▬</b> אותו כסף ב-SPY <span class="num '+sign(sLast)+'">'+fmtMoney(sLast,0)+'</span></span>':'')+
+      '<span class="tiny" style="margin-inline-start:auto">שיא <span class="num">'+fv(hi)+'</span> · שפל <span class="num">'+fv(lo)+'</span></span></div>'+
+    (mode==="R"?'<p class="tiny" style="margin-top:6px">ב-R אין מקבילה ל-SPY, לכן קו ההשוואה מוסתר. עבור לכסף כדי לראות אותו.</p>':'')+
+    (hasSpy&&missing?'<p class="tiny" style="margin-top:6px">'+missing+' עסקאות מחוץ לטווח היסטוריית ה-SPY השמורה ולא נכללו בקו ההשוואה.</p>':'')+
+    '</div>';
+}
+
+/* Which tickers actually made money. Realized only — an open position has not
+   decided yet. MRNA and NVDA each appear several times; grouping is the point. */
+function perTicker(rows){
+  var by={};
+  rows.forEach(function(t){
+    var k=t.ticker||"—", g=by[k]=by[k]||{ticker:k,n:0,wins:0,pnl:0};
+    var v=num(t.pnl_abs)||0; g.n++; g.pnl+=v; if(v>0) g.wins++;
+  });
+  var list=Object.keys(by).map(function(k){ return by[k]; }).sort(function(a,b){ return b.pnl-a.pnl; });
+  if(!list.length) return "";
+  var max=Math.max.apply(null,list.map(function(g){ return Math.abs(g.pnl); }).concat([1]));
+  var best=list[0], worst=list[list.length-1];
+  return '<div class="section"><div class="section-head"><h2>לפי מניה</h2>'+
+    '<span class="sub">'+list.length+' מניות · ממומש בלבד</span></div>'+
+    '<div class="card pad"><div class="bars">'+
+    list.map(function(g){
+      return bar(g.ticker+" · "+g.n, g.pnl, max, g.pnl>=0?"var(--gain)":"var(--loss)", fmtMoney(g.pnl,0));
+    }).join("")+'</div></div>'+
+    '<p class="note" style="margin-top:10px">הכי הרוויחה <b>'+esc(best.ticker)+'</b> '+fmtMoney(best.pnl,0)+
+    ' · הכי הפסידה <b>'+esc(worst.ticker)+'</b> '+fmtMoney(worst.pnl,0)+'</p></div>';
+}
+
+/* Journaled trades against SPY over each trade's own holding window. */
+function benchSection(rows){
+  var h='<div class="section"><div class="section-head"><h2>מול SPY</h2>'+
+        '<span class="sub">עסקאות שתועדו ביומן</span></div>';
+  if(!spyBars()) return h+'<div class="empty"><h3>אין עדיין היסטוריית SPY</h3>'+
+    '<p class="tiny">ההשוואה נשענת על מחירי הסגירה של SPY השמורים ב-<span class="num">benchmark/spy</span>. הדף לא ניגש לרשת בעצמו — בקש מקלוד בצ׳אט לרענן את הנתון.</p></div></div>';
+  var have=[], miss=0;
+  rows.forEach(function(t){ var b=benchOf(t); if(b&&b.mine!==null) have.push(b); else miss++; });
+  if(!have.length) return h+'<div class="empty"><h3>אין עסקאות בטווח</h3>'+
+    '<p class="tiny">אף עסקה סגורה לא נופלת בתוך טווח היסטוריית ה-SPY השמורה.</p></div></div>';
+  var beat=have.filter(function(b){ return b.alpha>0; }).length;
+  var avgA=have.reduce(function(s,b){ return s+b.alpha; },0)/have.length;
+  var myPnl=have.reduce(function(s,b){ return s+(b.mineAbs||0); },0);
+  var spyPnl=have.reduce(function(s,b){ return s+(b.spyPnl||0); },0);
+  var diff=myPnl-spyPnl;
+  h+='<div class="stats" style="margin-bottom:14px">'+
+    cell("אלפא ממוצעת לעסקה",'<span class="num '+sign(avgA)+'">'+fmtPct(avgA)+'</span>',"תשואה פחות SPY באותם ימים")+
+    cell("הכו את SPY",'<span class="num">'+beat+'</span>',"מתוך "+have.length+" · "+Math.round(beat/have.length*100)+"%")+
+    cell("העסקאות שלך",'<span class="num '+sign(myPnl)+'">'+fmtMoney(myPnl,0)+'</span>',"ממומש")+
+    cell("אותו כסף ב-SPY",'<span class="num '+sign(spyPnl)+'">'+fmtMoney(spyPnl,0)+'</span>',"אותו גודל, אותם ימים")+
+    '</div>';
+  h+='<p class="note">'+(diff>=0
+    ? 'המסחר המתועד הניב <b class="pos num">'+fmtMoney(diff,0)+'</b> יותר מהחזקת SPY באותו כסף ובאותם ימים.'
+    : 'המסחר המתועד הניב <b class="neg num">'+fmtMoney(Math.abs(diff),0)+'</b> פחות מהחזקת SPY באותו כסף ובאותם ימים.')+
+    (miss?' '+miss+' עסקאות לא נכללו — מחוץ לטווח או בלי תאריך.':'')+'</p>';
+  return h+'</div>';
+}
+
+/* The whole picture: realized and unrealized together. */
+function benchTotal(){
+  var closed=closedTrades(), open=openTrades(), all=closed.concat(open);
+  var realized=closed.reduce(function(s,t){ return s+(num(t.pnl_abs)||0); },0);
+  var unreal=open.reduce(function(s,t){ var p=openPnl(t); return s+(p?p.abs:0); },0);
+  var mine=realized+unreal, spyTot=0, counted=0, skipped=0;
+  all.forEach(function(t){ var b=benchOf(t);
+    if(b&&b.spyPnl!==null){ spyTot+=b.spyPnl; counted++; } else skipped++; });
+  var h='<div class="section"><div class="section-head"><h2>הכל עד עכשיו</h2>'+
+        '<span class="sub">ממומש ולא ממומש יחד</span></div>';
+  h+='<div class="stats" style="margin-bottom:14px">'+
+    cell("ממומש",'<span class="num '+sign(realized)+'">'+fmtMoney(realized,0)+'</span>',closed.length+" עסקאות סגורות")+
+    cell("על הנייר",'<span class="num '+sign(unreal)+'">'+fmtMoney(unreal,0)+'</span>',open.length+" פוזיציות פתוחות")+
+    cell("סך הכל",'<span class="num '+sign(mine)+'">'+fmtMoney(mine,0)+'</span>',"המצב האמיתי שלך")+
+    (spyBars()? cell("אותו כסף ב-SPY",'<span class="num '+sign(spyTot)+'">'+fmtMoney(spyTot,0)+'</span>',counted+" מתוך "+all.length+" ניתנות להשוואה") : "")+
+    '</div>';
+  if(spyBars()&&counted){
+    var diff=mine-spyTot;
+    h+='<p class="note">'+(diff>=0
+      ? 'אתה מקדים את SPY ב-<b class="pos num">'+fmtMoney(diff,0)+'</b>'
+      : 'אתה מפגר אחרי SPY ב-<b class="neg num">'+fmtMoney(Math.abs(diff),0)+'</b>')+
+      ' על כל מה שנעשה עד היום.'+(skipped?' '+skipped+' רשומות בלי תאריך כניסה לא נכללו.':'')+'</p>';
+  }
+  return h+'</div>';
 }
 
 function viewStats(){
@@ -823,20 +966,21 @@ function viewStats(){
   h+='<div class="section-head"><h2>סטטיסטיקה</h2><span class="sub">'+rows.length+' עסקאות סגורות</span></div>';
   if(!rows.length) return h+'<div class="empty"><h3>עדיין אין עסקאות סגורות</h3><p class="tiny">הסטטיסטיקה נבנית מעסקאות שנסגרו. סגור עסקה ראשונה או ייבא היסטוריה מהברוקר.</p></div>';
   var a=agg(rows), ex=expectancyR(rows);
-  /* Expectancy in R is by definition the mean R, so show it in money too —
-     the average risk per trade turns it into "what a trade is worth". */
-  var risks=rows.map(function(t){ var r=riskPerShare(t), q=num(t.shares); return (r&&q)?r*q:null; })
-                .filter(function(x){ return x!==null; });
-  var avgRisk=risks.length? risks.reduce(function(p,c){ return p+c; },0)/risks.length : null;
+  /* Expectancy in R is by definition the mean R, so the cell states how many
+     trades actually carry an R — most of the imported history has no stop. */
+  var rsN=rows.filter(function(t){ return num(t.r_multiple)!==null; }).length;
   h+='<div class="stats" style="margin-bottom:18px">'+
      cell("תוחלת לעסקה", '<span class="num '+sign(ex)+'">'+fmtR(ex)+'</span>',
-       (ex!==null&&avgRisk)? "כ-"+fmtMoney(ex*avgRisk,0)+" לעסקה" : (ex===null?"צריך R מתועד":"אין סיכון מתועד"))+
-     cell("סך R", '<span class="num '+sign(a.totalR)+'">'+fmtR(a.totalR)+'</span>', "מצטבר על כל העסקאות")+
+       (ex===null?"צריך סטופ מתועד":"על "+rsN+" עסקאות עם סטופ"))+
+     cell("סך R", '<span class="num '+sign(a.totalR)+'">'+fmtR(a.totalR)+'</span>', rsN+" מתוך "+rows.length+" עם סטופ מתועד")+
      cell("אחוז מרוויחות", '<span class="num">'+fmtNum(a.winRate,0)+'%</span>', a.wins+" מרוויחות / "+a.losses+" מפסידות")+
      cell("רווח ממוצע ÷ הפסד ממוצע", '<span class="num">'+(a.ratio!==null?fmtNum(a.ratio,2):"—")+'</span>', (a.avgWin!==null?fmtMoney(a.avgWin,0):"—")+" מול "+(a.avgLoss!==null?fmtMoney(a.avgLoss,0):"—"))+
      cell("סך רווח/הפסד", '<span class="num '+sign(a.total)+'">'+fmtMoney(a.total,0)+'</span>', "ממוצע לעסקה "+fmtPct(a.avgPct))+
      '</div>';
   h+='<div style="margin-bottom:22px">'+equityCurve(rows)+'</div>';
+  h+=benchSection(rows);
+  h+=benchTotal();
+  h+=perTicker(rows);
 
   /* discipline */
   var withFlag=rows.filter(function(t){ return t.followed_rules===true||t.followed_rules===false; });
@@ -1399,11 +1543,13 @@ async function doImport(){
 
 /* ---------------- events ---------------- */
 document.addEventListener("click", function(ev){
-  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade],[data-toggle-trade]");
+  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade],[data-toggle-trade],[data-curve]");
   if(ev.target.matches("[data-overlay]")){ closeModal(); return; }
   if(!el) return;
   var nav=el.getAttribute("data-nav");
   if(nav){ closeModal(); go(nav); return; }
+  var cv=el.getAttribute("data-curve");
+  if(cv){ state.curveMode=cv; render(); return; }
   var tg=el.getAttribute("data-toggle-trade");
   if(tg){ state.expandedId = (state.expandedId===tg) ? null : tg; render(); return; }
   var ot=el.getAttribute("data-open-trade");
