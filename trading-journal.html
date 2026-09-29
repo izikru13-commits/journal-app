@@ -181,6 +181,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .gate .hint{color:var(--accent-ink);opacity:.85;font-weight:400;}
 .gate label.hint{font-weight:400;font-size:12.5px;}
 
+/* scope chips */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.chip{background:var(--surface);border:1px solid var(--line-strong);border-radius:999px;
+  padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap;}
+.chip b{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);font-weight:600;}
+.chip:hover{border-color:var(--ink-3);color:var(--ink);}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chip.on b{color:#fff;opacity:.75;}
+/* plain-language line under a section heading */
+.explain{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:12px;max-width:62ch;}
+.gloss{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;color:var(--ink-2);}
+.gloss dt{font-weight:700;color:var(--ink);white-space:nowrap;}
+.gloss dd{margin:0;}
+
 .rulechk{display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer;line-height:1.45;}
 .rulechk input{accent-color:var(--accent);margin:2px 0 0;flex:none;}
 .rulechk i{font-style:normal;color:var(--ink-3);font-size:11px;}
@@ -299,7 +313,7 @@ var state = {
   pendingRender:false,
   canWrite:true, accessChecked:false,
   expandedId:null,
-  benchmark:null, curveMode:"money"
+  benchmark:null, curveMode:"money", scope:"all"
 };
 
 /* ---------------- helpers ---------------- */
@@ -390,6 +404,34 @@ function benchOf(t,asOf){
 
 function needsThesis(t){ return !String(t.entry_reason||"").trim() || !String(t.exit_plan||"").trim(); }
 function needsAction(t){ return isBreach(t) || t.stop_loss==null || needsThesis(t); }
+
+/* "In the journal" means a journal entry points at the trade through
+   related_trade_id — that is the four the user counts, not a tag or a stop. */
+function journaledIds(){
+  var s={};
+  (state.journal||[]).forEach(function(j){ if(j.related_trade_id) s[j.related_trade_id]=1; });
+  return s;
+}
+var SCOPES=[{id:"all",label:"הכל"},{id:"journaled",label:"ביומן"},
+            {id:"unjournaled",label:"לא ביומן"},{id:"open",label:"עדיין פתוחות"}];
+/* A scope is a lens, not a partition: MSTR and NVDA are journaled AND still
+   open, so they show up under both. */
+function scopeTrades(id){
+  var all=state.trades||[], ids=journaledIds(), sel;
+  if(id==="journaled") sel=all.filter(function(t){ return ids[t.id]; });
+  else if(id==="unjournaled") sel=all.filter(function(t){ return !ids[t.id]; });
+  else if(id==="open") sel=all.filter(function(t){ return t.status!=="closed"; });
+  else sel=all.slice();
+  return { all:sel,
+           closed:sel.filter(function(t){ return t.status==="closed"; }),
+           open:sel.filter(function(t){ return t.status!=="closed"; }) };
+}
+function scopeChips(cur){
+  return '<div class="chips">'+SCOPES.map(function(s){
+    return '<button type="button" class="chip'+(cur===s.id?" on":"")+'" data-scope="'+s.id+'">'+
+      esc(s.label)+' <b>'+scopeTrades(s.id).all.length+'</b></button>';
+  }).join("")+'</div>';
+}
 function openTrades(){ return (state.trades||[]).filter(function(t){ return t.status!=="closed"; }); }
 function closedTrades(){ return (state.trades||[]).filter(function(t){ return t.status==="closed"; }); }
 function tradeById(id){ return (state.trades||[]).filter(function(t){ return t.id===id; })[0] || null; }
@@ -897,7 +939,8 @@ function perTicker(rows){
   var max=Math.max.apply(null,list.map(function(g){ return Math.abs(g.pnl); }).concat([1]));
   var best=list[0], worst=list[list.length-1];
   return '<div class="section"><div class="section-head"><h2>לפי מניה</h2>'+
-    '<span class="sub">'+list.length+' מניות · ממומש בלבד</span></div>'+
+    '<span class="sub">'+list.length+' מניות</span></div>'+
+    '<p class="explain">כמה כל מניה עשתה לך בסך הכל, אחרי שכל העסקאות שביצעת בה חוברו יחד. המספר ליד הטיקר הוא מספר העסקאות באותה מניה.</p>'+
     '<div class="card pad"><div class="bars">'+
     list.map(function(g){
       return bar(g.ticker+" · "+g.n, g.pnl, max, g.pnl>=0?"var(--gain)":"var(--loss)", fmtMoney(g.pnl,0));
@@ -909,7 +952,8 @@ function perTicker(rows){
 /* Journaled trades against SPY over each trade's own holding window. */
 function benchSection(rows){
   var h='<div class="section"><div class="section-head"><h2>מול SPY</h2>'+
-        '<span class="sub">עסקאות שתועדו ביומן</span></div>';
+        '<span class="sub">רק עסקאות שנסגרו</span></div>'+
+        '<p class="explain">לכל עסקה שסגרת בדקתי מה SPY עשה בדיוק באותם ימים — מהיום שנכנסת ועד היום שיצאת. ההפרש בין השניים הוא מה שהמסחר שלך הוסיף, או גרע, לעומת פשוט להחזיק את המדד ולא לעשות כלום.</p>';
   if(!spyBars()) return h+'<div class="empty"><h3>אין עדיין היסטוריית SPY</h3>'+
     '<p class="tiny">ההשוואה נשענת על מחירי הסגירה של SPY השמורים ב-<span class="num">benchmark/spy</span>. הדף לא ניגש לרשת בעצמו — בקש מקלוד בצ׳אט לרענן את הנתון.</p></div></div>';
   var have=[], miss=0;
@@ -922,10 +966,10 @@ function benchSection(rows){
   var spyPnl=have.reduce(function(s,b){ return s+(b.spyPnl||0); },0);
   var diff=myPnl-spyPnl;
   h+='<div class="stats" style="margin-bottom:14px">'+
-    cell("אלפא ממוצעת לעסקה",'<span class="num '+sign(avgA)+'">'+fmtPct(avgA)+'</span>',"תשואה פחות SPY באותם ימים")+
-    cell("הכו את SPY",'<span class="num">'+beat+'</span>',"מתוך "+have.length+" · "+Math.round(beat/have.length*100)+"%")+
-    cell("העסקאות שלך",'<span class="num '+sign(myPnl)+'">'+fmtMoney(myPnl,0)+'</span>',"ממומש")+
-    cell("אותו כסף ב-SPY",'<span class="num '+sign(spyPnl)+'">'+fmtMoney(spyPnl,0)+'</span>',"אותו גודל, אותם ימים")+
+    cell("בממוצע מול SPY",'<span class="num '+sign(avgA)+'">'+fmtPct(avgA)+'</span>',avgA>=0?"בכל עסקה הכית את המדד":"בכל עסקה פיגרת אחרי המדד")+
+    cell("עסקאות שניצחו את SPY",'<span class="num">'+beat+'</span>',"מתוך "+have.length+" · "+Math.round(beat/have.length*100)+"%")+
+    cell("הרווחת מהמסחר",'<span class="num '+sign(myPnl)+'">'+fmtMoney(myPnl,0)+'</span>',"מה שבאמת נכנס לכיס")+
+    cell("היית מרוויח מ-SPY",'<span class="num '+sign(spyPnl)+'">'+fmtMoney(spyPnl,0)+'</span>',"אותו סכום, אותם תאריכים")+
     '</div>';
   h+='<p class="note">'+(diff>=0
     ? 'המסחר המתועד הניב <b class="pos num">'+fmtMoney(diff,0)+'</b> יותר מהחזקת SPY באותו כסף ובאותם ימים.'
@@ -935,20 +979,21 @@ function benchSection(rows){
 }
 
 /* The whole picture: realized and unrealized together. */
-function benchTotal(){
-  var closed=closedTrades(), open=openTrades(), all=closed.concat(open);
+function benchTotal(closed,open){
+  var all=closed.concat(open);
   var realized=closed.reduce(function(s,t){ return s+(num(t.pnl_abs)||0); },0);
   var unreal=open.reduce(function(s,t){ var p=openPnl(t); return s+(p?p.abs:0); },0);
   var mine=realized+unreal, spyTot=0, counted=0, skipped=0;
   all.forEach(function(t){ var b=benchOf(t);
     if(b&&b.spyPnl!==null){ spyTot+=b.spyPnl; counted++; } else skipped++; });
   var h='<div class="section"><div class="section-head"><h2>הכל עד עכשיו</h2>'+
-        '<span class="sub">ממומש ולא ממומש יחד</span></div>';
+        '<span class="sub">ממומש ולא ממומש יחד</span></div>'+
+        '<p class="explain">כל מה שקרה בחתך הזה — גם כסף שכבר נכנס לכיס וגם רווח שעדיין רק על הנייר — מול אותו סכום אילו היה יושב ב-SPY באותן תקופות.</p>';
   h+='<div class="stats" style="margin-bottom:14px">'+
-    cell("ממומש",'<span class="num '+sign(realized)+'">'+fmtMoney(realized,0)+'</span>',closed.length+" עסקאות סגורות")+
-    cell("על הנייר",'<span class="num '+sign(unreal)+'">'+fmtMoney(unreal,0)+'</span>',open.length+" פוזיציות פתוחות")+
-    cell("סך הכל",'<span class="num '+sign(mine)+'">'+fmtMoney(mine,0)+'</span>',"המצב האמיתי שלך")+
-    (spyBars()? cell("אותו כסף ב-SPY",'<span class="num '+sign(spyTot)+'">'+fmtMoney(spyTot,0)+'</span>',counted+" מתוך "+all.length+" ניתנות להשוואה") : "")+
+    cell("כסף שכבר נכנס לכיס",'<span class="num '+sign(realized)+'">'+fmtMoney(realized,0)+'</span>',closed.length+" עסקאות שנסגרו")+
+    cell("רווח על הנייר",'<span class="num '+sign(unreal)+'">'+fmtMoney(unreal,0)+'</span>',open.length+" פוזיציות שעוד פתוחות")+
+    cell("סך הכל",'<span class="num '+sign(mine)+'">'+fmtMoney(mine,0)+'</span>',"שתי השורות יחד")+
+    (spyBars()? cell("היית מרוויח מ-SPY",'<span class="num '+sign(spyTot)+'">'+fmtMoney(spyTot,0)+'</span>',counted+" מתוך "+all.length+" ניתנות להשוואה") : "")+
     '</div>';
   if(spyBars()&&counted){
     var diff=mine-spyTot;
@@ -960,26 +1005,67 @@ function benchTotal(){
   return h+'</div>';
 }
 
+/* Positions still open: nothing is realized, so this is a separate section
+   rather than a column in the realized tables. */
+function unrealizedSection(open){
+  if(!open.length) return "";
+  var pnl=0, priced=0, size=0, spyPnl=0, counted=0, noDate=0;
+  open.forEach(function(t){
+    var p=openPnl(t); if(p){ pnl+=p.abs; priced++; }
+    var s=posSize(t); if(s!==null) size+=s;
+    var b=benchOf(t);
+    if(b&&b.spyPnl!==null){ spyPnl+=b.spyPnl; counted++; } else noDate++;
+  });
+  var h='<div class="section"><div class="section-head"><h2>עדיין לא מימשת</h2>'+
+    '<span class="sub">'+open.length+' פוזיציות פתוחות</span></div>'+
+    '<p class="explain">אלה מניות שעוד לא יצאת מהן, אז שום דבר כאן לא סופי — הרווח או ההפסד משתנה עם כל תנועה במחיר. ההשוואה ל-SPY נמדדת מיום הכניסה ועד היום.</p>';
+  h+='<div class="stats" style="margin-bottom:12px">'+
+    cell("רווח על הנייר",'<span class="num '+sign(pnl)+'">'+(priced?fmtMoney(pnl,0):"—")+'</span>', priced+" מתוך "+open.length+" עם מחיר עדכני")+
+    cell("כמה כסף מושקע",'<span class="num">'+fmtMoney(size,0)+'</span>',"לפי מחירי הכניסה")+
+    (spyBars()? cell("היית מרוויח מ-SPY",'<span class="num '+sign(spyPnl)+'">'+fmtMoney(spyPnl,0)+'</span>', counted+" מתוך "+open.length+" ניתנות להשוואה") : "")+
+    (spyBars()&&counted? cell("ההפרש",'<span class="num '+sign(pnl-spyPnl)+'">'+fmtMoney(pnl-spyPnl,0)+'</span>', (pnl-spyPnl)>=0?"לטובתך":"לטובת המדד") : "")+
+    '</div>';
+  h+='<div class="poslist">'+open.slice().sort(function(a,b){
+      var pa=openPnl(a), pb=openPnl(b); return (pb?pb.abs:0)-(pa?pa.abs:0); }).map(posRow).join("")+'</div>';
+  if(noDate) h+='<p class="tiny" style="margin-top:8px">'+noDate+' פוזיציות בלי תאריך כניסה — אי אפשר להשוות אותן ל-SPY.</p>';
+  return h+'</div>';
+}
+
 function viewStats(){
-  var rows=closedTrades();
+  var sc=state.scope||"all", grp=scopeTrades(sc), rows=grp.closed;
   var h=offBanner();
-  h+='<div class="section-head"><h2>סטטיסטיקה</h2><span class="sub">'+rows.length+' עסקאות סגורות</span></div>';
-  if(!rows.length) return h+'<div class="empty"><h3>עדיין אין עסקאות סגורות</h3><p class="tiny">הסטטיסטיקה נבנית מעסקאות שנסגרו. סגור עסקה ראשונה או ייבא היסטוריה מהברוקר.</p></div>';
+  h+='<div class="section-head"><h2>סטטיסטיקה</h2>'+
+     '<span class="sub">'+grp.all.length+' עסקאות · '+rows.length+' סגורות</span></div>';
+  h+=scopeChips(sc);
+  h+='<p class="explain">'+(
+     sc==="journaled" ? 'רק העסקאות שכתבת עליהן ביומן — אלה שתיעדת בהן מה קרה ולמה.'
+   : sc==="unjournaled" ? 'כל מה שסחרת בו בלי לכתוב עליו ביומן — בעיקר ההיסטוריה שיובאה מהברוקר.'
+   : sc==="open" ? 'רק מניות שעדיין לא יצאת מהן. אין כאן תוצאה סופית.'
+   : 'כל מה שיש ביומן — סגורות ופתוחות, מתועדות ולא מתועדות.')+'</p>';
+
+  if(sc==="open"){ return h+unrealizedSection(grp.open); }
+
+  if(!rows.length){
+    h+='<div class="empty"><h3>אין עסקאות סגורות בחתך הזה</h3>'+
+       '<p class="tiny">הסטטיסטיקה של תוצאות נבנית מעסקאות שנסגרו. בחתך הזה אין כאלה — נסה חתך אחר.</p></div>';
+    return h+unrealizedSection(grp.open);
+  }
   var a=agg(rows), ex=expectancyR(rows);
   /* Expectancy in R is by definition the mean R, so the cell states how many
      trades actually carry an R — most of the imported history has no stop. */
   var rsN=rows.filter(function(t){ return num(t.r_multiple)!==null; }).length;
   h+='<div class="stats" style="margin-bottom:18px">'+
-     cell("תוחלת לעסקה", '<span class="num '+sign(ex)+'">'+fmtR(ex)+'</span>',
+     cell("כמה עסקה שווה בממוצע", '<span class="num '+sign(ex)+'">'+fmtR(ex)+'</span>',
        (ex===null?"צריך סטופ מתועד":"על "+rsN+" עסקאות עם סטופ"))+
      cell("סך R", '<span class="num '+sign(a.totalR)+'">'+fmtR(a.totalR)+'</span>', rsN+" מתוך "+rows.length+" עם סטופ מתועד")+
      cell("אחוז מרוויחות", '<span class="num">'+fmtNum(a.winRate,0)+'%</span>', a.wins+" מרוויחות / "+a.losses+" מפסידות")+
-     cell("רווח ממוצע ÷ הפסד ממוצע", '<span class="num">'+(a.ratio!==null?fmtNum(a.ratio,2):"—")+'</span>', (a.avgWin!==null?fmtMoney(a.avgWin,0):"—")+" מול "+(a.avgLoss!==null?fmtMoney(a.avgLoss,0):"—"))+
+     cell("יחס רווח להפסד", '<span class="num">'+(a.ratio!==null?fmtNum(a.ratio,2):"—")+'</span>', "רווח ממוצע "+(a.avgWin!==null?fmtMoney(a.avgWin,0):"—")+" מול הפסד "+(a.avgLoss!==null?fmtMoney(a.avgLoss,0):"—"))+
      cell("סך רווח/הפסד", '<span class="num '+sign(a.total)+'">'+fmtMoney(a.total,0)+'</span>', "ממוצע לעסקה "+fmtPct(a.avgPct))+
      '</div>';
   h+='<div style="margin-bottom:22px">'+equityCurve(rows)+'</div>';
   h+=benchSection(rows);
-  h+=benchTotal();
+  h+=benchTotal(grp.closed,grp.open);
+  h+=unrealizedSection(grp.open);
   h+=perTicker(rows);
 
   /* discipline */
@@ -988,7 +1074,8 @@ function viewStats(){
   var broke=rows.filter(function(t){ return t.followed_rules===false; });
   var disc = withFlag.length? (kept.length/withFlag.length)*100 : null;
   var ak=agg(kept), ab=agg(broke);
-  h+='<div class="section"><div class="section-head"><h2>מדד משמעת</h2><span class="sub">'+(withFlag.length?withFlag.length+" עסקאות שבהן ענית על השאלה":"טרם נענתה השאלה באף עסקה")+'</span></div>';
+  h+='<div class="section"><div class="section-head"><h2>מדד משמעת</h2><span class="sub">'+(withFlag.length?withFlag.length+" עסקאות שבהן ענית על השאלה":"טרם נענתה השאלה באף עסקה")+'</span></div>'+
+     '<p class="explain">בכל סגירת עסקה אתה נשאל אם פעלת לפי הכללים שלך. כאן רואים בכמה מהן ענית "כן", ומה זה עשה לתוצאה בפועל.</p>';
   h+='<div class="card pad stack">';
   h+='<div class="row" style="align-items:baseline;gap:14px"><span style="font-size:34px;font-weight:600;font-family:var(--mono);direction:ltr">'+(disc!==null?iso(fmtNum(disc,0)+"%"):"—")+'</span>'+
      '<span class="tiny">מהעסקאות נסגרו לפי הכללים ('+kept.length+' מתוך '+withFlag.length+')</span></div>';
@@ -1020,6 +1107,12 @@ function viewStats(){
   h+='<div class="card pad" style="margin-top:12px"><div class="eyebrow" style="margin-bottom:10px">ממוצע R לפי סטאפ</div><div class="bars">'+
      keys.map(function(k){ var s=agg(bySetup[k]); return bar(k, s.avgR||0, maxAbs, (s.avgR||0)>=0?"var(--gain)":"var(--loss)", fmtR(s.avgR)); }).join("")+
      '</div></div></div>';
+  h+='<div class="section"><div class="eyebrow" style="margin-bottom:8px">מה המונחים אומרים</div>'+
+     '<div class="card pad"><dl class="gloss">'+
+     '<dt>R</dt><dd>יחידת הסיכון שלך בעסקה — המרחק בין מחיר הכניסה לסטופ. יצאת ברווח כפול מהמרחק הזה? זה <span class="num">+2R</span>. נפגעת בסטופ? <span class="num">-1R</span>. המדד הזה מאפשר להשוות עסקה קטנה לגדולה.</dd>'+
+     '<dt>מול SPY</dt><dd>כמה הרווחת או הפסדת לעומת מה ש-SPY עשה באותם ימים בדיוק. חיובי = המסחר הוסיף מעבר למדד; שלילי = עדיף היה להחזיק את המדד.</dd>'+
+     '<dt>כמה עסקה שווה</dt><dd>ממוצע ה-R על פני כל העסקאות. חיובי = לאורך זמן השיטה מרוויחה; שלילי = מפסידה, גם אם יש עסקאות מוצלחות בדרך.</dd>'+
+     '</dl></div></div>';
   return h;
 }
 
@@ -1543,11 +1636,13 @@ async function doImport(){
 
 /* ---------------- events ---------------- */
 document.addEventListener("click", function(ev){
-  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade],[data-toggle-trade],[data-curve]");
+  var el=ev.target.closest("[data-nav],[data-act],[data-open-trade],[data-toggle-trade],[data-curve],[data-scope]");
   if(ev.target.matches("[data-overlay]")){ closeModal(); return; }
   if(!el) return;
   var nav=el.getAttribute("data-nav");
   if(nav){ closeModal(); go(nav); return; }
+  var sc=el.getAttribute("data-scope");
+  if(sc){ state.scope=sc; render(); return; }
   var cv=el.getAttribute("data-curve");
   if(cv){ state.curveMode=cv; render(); return; }
   var tg=el.getAttribute("data-toggle-trade");
