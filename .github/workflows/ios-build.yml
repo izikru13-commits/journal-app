@@ -5,6 +5,10 @@ on:
     paths:
       - "gallery-cleaner/**"
       - ".github/workflows/ios-build.yml"
+  pull_request:
+    paths:
+      - "gallery-cleaner/**"
+      - ".github/workflows/ios-build.yml"
   workflow_dispatch:
 
 jobs:
@@ -55,3 +59,63 @@ jobs:
           path: |
             gallery-cleaner/SwipeClean.xcodeproj
             gallery-cleaner/SwipeClean
+
+  test:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: gallery-cleaner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Boot simulator with test photos
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)["devices"]
+          runtimes = sorted((k for k in data if "iOS" in k), reverse=True)
+          for rt in runtimes:
+              phones = [d for d in data[rt] if d["name"].startswith("iPhone")]
+              if phones:
+                  print(phones[0]["udid"]); break
+          ')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl addmedia "$UDID" TestMedia/*.jpg
+          xcrun simctl privacy "$UDID" grant photos com.swipeclean.app || true
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit + UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project SwipeClean.xcodeproj \
+            -scheme SwipeClean \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee test.log | grep -E "error:|Test Case .*(passed|failed)|Executed|XCTAssert|TEST (SUCCEEDED|FAILED)|\*\* " || true
+          grep -q "TEST SUCCEEDED" test.log
+
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          xcrun xcresulttool export attachments --path TestResults.xcresult --output-path screenshots || true
+          ls -la screenshots | head -40
+
+      - name: Upload screenshots and test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwipeClean-test-results
+          path: |
+            gallery-cleaner/screenshots
+            gallery-cleaner/test.log

@@ -57,6 +57,7 @@ struct CelebrationView: View {
 
                 Spacer()
                 Button("סיום", action: onDone)
+                    .accessibilityIdentifier("celebration.done")
                     .buttonStyle(PrimaryButtonStyle(color: .white.opacity(0.22)))
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)

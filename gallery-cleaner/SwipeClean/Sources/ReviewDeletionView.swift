@@ -71,10 +71,12 @@ struct ReviewDeletionView: View {
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle(color: store.data.pendingDeletes.isEmpty ? Theme.indigo : Theme.delete))
+                .accessibilityIdentifier("summary.commit")
                 .disabled(working)
 
                 if store.hasPendingChanges {
                     Button("לא עכשיו – אמחק אחר כך") { onDone(nil) }
+                        .accessibilityIdentifier("summary.later")
                         .foregroundStyle(Theme.subtle)
                         .disabled(working)
                 }
@@ -143,6 +145,7 @@ struct ReviewDeletionView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("summary.thumb")
     }
 
     private func load() {

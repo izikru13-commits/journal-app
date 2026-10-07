@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct SwipeCleanApp: App {
-    @StateObject private var store = ProgressStore()
+    @StateObject private var store = ProgressStore(startFresh: AppEnvironment.isUITesting)
     @StateObject private var library = PhotoLibraryService()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -50,4 +50,9 @@ struct RootView: View {
             }
         }
     }
+}
+
+enum AppEnvironment {
+    /// Set by the UI tests: start with a clean progress file and skip the notification prompt.
+    static let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
 }

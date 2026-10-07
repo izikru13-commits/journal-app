@@ -100,6 +100,7 @@ struct HomeView: View {
         VStack(spacing: 12) {
             Text(Format.number(library.totalCount))
                 .font(.system(size: 54, weight: .heavy, design: .rounded))
+                .accessibilityIdentifier("home.total")
                 .contentTransition(.numericText())
             Text("תמונות וסרטונים בגלריה")
                 .font(.headline)
@@ -183,6 +184,7 @@ struct HomeView: View {
                 Label(buttonTitle(today: today, done: done), systemImage: "hand.draw.fill")
             }
             .buttonStyle(PrimaryButtonStyle(color: Theme.indigo))
+            .accessibilityIdentifier("home.start")
             .disabled(remaining == 0 && !library.isCounting)
             .opacity(remaining == 0 && !library.isCounting ? 0.5 : 1)
 
@@ -253,6 +255,7 @@ struct HomeView: View {
             .cardStyle()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("home.pending")
     }
 
     private var statsCard: some View {

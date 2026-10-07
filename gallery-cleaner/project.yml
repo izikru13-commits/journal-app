@@ -40,6 +40,29 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         NSPhotoLibraryUsageDescription: האפליקציה צריכה גישה לגלריה כדי להציג לך תמונות וסרטונים לסקירה. התמונות לא יוצאות מהטלפון ושום דבר לא נמחק בלי אישור שלך.
         PHPhotoLibraryPreventAutomaticLimitedAccessAlert: true
+  SwipeCleanTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - SwipeCleanTests
+    dependencies:
+      - target: SwipeClean
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.swipeclean.app.tests
+  SwipeCleanUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - SwipeCleanUITests
+    dependencies:
+      - target: SwipeClean
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.swipeclean.app.uitests
+        TEST_TARGET_NAME: SwipeClean
 schemes:
   SwipeClean:
     build:
@@ -47,5 +70,11 @@ schemes:
         SwipeClean: all
     run:
       config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - SwipeCleanTests
+        - SwipeCleanUITests
     archive:
       config: Release

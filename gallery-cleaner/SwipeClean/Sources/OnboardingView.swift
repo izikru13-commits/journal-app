@@ -41,6 +41,7 @@ struct OnboardingView: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle(color: Theme.indigo))
+            .accessibilityIdentifier("onboarding.next")
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
@@ -52,7 +53,10 @@ struct OnboardingView: View {
         requesting = true
         await library.requestAuthorization()
         if library.hasAccess {
-            let granted = await NotificationManager.requestPermission()
+            var granted = false
+            if !AppEnvironment.isUITesting {
+                granted = await NotificationManager.requestPermission()
+            }
             store.update {
                 $0.onboarded = true
                 if !granted { $0.reminderEnabled = false }

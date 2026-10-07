@@ -52,6 +52,7 @@ struct SwipeSessionView: View {
                 .font(.title2.weight(.heavy))
             Spacer()
             Button("סיום") { onFinish(vm.sessionReviewed) }
+                .accessibilityIdentifier("session.finish")
                 .font(.headline)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
@@ -63,19 +64,19 @@ struct SwipeSessionView: View {
 
     private var statsRow: some View {
         HStack {
-            stat("נסקרו", "\(vm.sessionReviewed)", .white)
+            stat("נסקרו", "\(vm.sessionReviewed)", .white, id: "stat.reviewed")
             Spacer()
-            stat("למחיקה", "\(store.data.pendingDeletes.count)", Theme.delete)
+            stat("למחיקה", "\(store.data.pendingDeletes.count)", Theme.delete, id: "stat.deletes")
             Spacer()
-            stat("יתפנו", Format.bytes(store.pendingDeleteBytes), .white)
+            stat("יתפנו", Format.bytes(store.pendingDeleteBytes), .white, id: "stat.bytes")
         }
         .font(.subheadline.weight(.bold))
     }
 
-    private func stat(_ title: String, _ value: String, _ color: Color) -> some View {
+    private func stat(_ title: String, _ value: String, _ color: Color, id: String) -> some View {
         HStack(spacing: 4) {
             Text(title)
-            Text(value)
+            Text(value).accessibilityIdentifier(id)
         }
         .foregroundStyle(color)
     }
@@ -111,6 +112,9 @@ struct SwipeSessionView: View {
                         .offset(index == 0 ? dragOffset : .zero)
                         .rotationEffect(.degrees(index == 0 ? Double(dragOffset.width / 18) : 0), anchor: .bottom)
                         .allowsHitTesting(index == 0)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(item.source)
+                        .accessibilityIdentifier(index == 0 ? "card.top" : "card.\(index)")
                         .onTapGesture { previewItem = item }
                         .gesture(dragGesture)
                 }
@@ -191,12 +195,16 @@ struct SwipeSessionView: View {
                 Haptics.impact(.light)
                 vm.undo()
             }
+            .accessibilityIdentifier("action.undo")
             .disabled(!vm.canUndo || isFlying)
             .opacity(vm.canUndo ? 1 : 0.4)
 
             CircleButton(icon: "xmark", color: Theme.delete, size: 72) { fly(.delete) }
+                .accessibilityIdentifier("action.delete")
             CircleButton(icon: "star.fill", color: Theme.favorite, size: 62) { fly(.favorite) }
+                .accessibilityIdentifier("action.favorite")
             CircleButton(icon: "checkmark", color: Theme.keep, size: 72) { fly(.keep) }
+                .accessibilityIdentifier("action.keep")
         }
         .disabled(vm.queue.isEmpty)
         .padding(.vertical, 6)
@@ -222,6 +230,7 @@ struct SwipeSessionView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle(color: Theme.indigo))
                 Button("להמשיך עוד קצת") { vm.goalJustReached = false }
+                    .accessibilityIdentifier("goal.continue")
                     .foregroundStyle(Theme.subtle)
             }
             .foregroundStyle(.white)

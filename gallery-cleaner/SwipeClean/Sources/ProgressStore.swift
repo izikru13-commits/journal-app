@@ -82,10 +82,15 @@ final class ProgressStore: ObservableObject {
     private let fileURL: URL
     private let saveQueue = DispatchQueue(label: "swipeclean.progress.save", qos: .utility)
 
-    init() {
+    static var defaultURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        fileURL = dir.appendingPathComponent("progress.json")
+        return dir.appendingPathComponent("progress.json")
+    }
+
+    init(fileURL: URL = ProgressStore.defaultURL, startFresh: Bool = false) {
+        self.fileURL = fileURL
+        if startFresh { try? FileManager.default.removeItem(at: fileURL) }
         if let raw = try? Data(contentsOf: fileURL),
            let decoded = try? JSONDecoder().decode(ProgressData.self, from: raw) {
             data = decoded
@@ -105,6 +110,11 @@ final class ProgressStore: ObservableObject {
                 try? raw.write(to: url, options: .atomic)
             }
         }
+    }
+
+    /// Blocks until pending writes hit disk (used by tests).
+    func waitForSave() {
+        saveQueue.sync {}
     }
 
     func update(_ change: (inout ProgressData) -> Void) {
