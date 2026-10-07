@@ -130,7 +130,7 @@ struct HomeView: View {
                 Image(systemName: "flame.fill")
                     .font(.title)
                     .foregroundStyle(LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom))
-                Text(store.streak == 1 ? "רצף של יום אחד" : "רצף של \(store.streak) ימים")
+                Text(streakTitle)
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(Theme.flame)
             }
@@ -200,6 +200,14 @@ struct HomeView: View {
             }
         }
         .cardStyle()
+    }
+
+    private var streakTitle: String {
+        switch store.streak {
+        case 0: return "מתחילים רצף היום"
+        case 1: return "רצף של יום אחד"
+        default: return "רצף של \(store.streak) ימים"
+        }
     }
 
     private func buttonTitle(today: Int, done: Bool) -> String {
