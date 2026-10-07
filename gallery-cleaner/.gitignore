@@ -1,0 +1,5 @@
+SwipeClean.xcodeproj/
+SwipeClean/Info.plist
+build/
+Payload/
+*.ipa
