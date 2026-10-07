@@ -1,0 +1,4 @@
+// Shared build settings for every Rega target.
+// Your Team ID lives in Config/Local.xcconfig (git-ignored), created by scripts/setup.sh:
+//   DEVELOPMENT_TEAM = ABCDE12345
+#include? "Local.xcconfig"

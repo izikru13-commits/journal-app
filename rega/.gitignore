@@ -1,0 +1,6 @@
+Rega.xcodeproj/
+Config/Local.xcconfig
+build/
+DerivedData/
+*.xcresult
+screenshots/

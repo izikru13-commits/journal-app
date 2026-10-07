@@ -1,0 +1,165 @@
+name: Build Rega (iOS)
+
+on:
+  push:
+    paths:
+      - "rega/**"
+      - ".github/workflows/rega-build.yml"
+  pull_request:
+    paths:
+      - "rega/**"
+      - ".github/workflows/rega-build.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: rega-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: rega
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -v -i beta | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for device (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Rega.xcodeproj -scheme Rega -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build-device.log | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build-device.log
+
+      - name: Report warnings in Rega sources
+        if: always()
+        run: |
+          grep -E "/rega/(App|Shared|Extensions|Tests|UITests)/.*warning:" build-device.log | sort -u || echo "No warnings in Rega sources"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rega-build-log
+          path: rega/build-device.log
+
+  test:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: rega
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest stable Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -v -i beta | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Boot simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)["devices"]
+          runtimes = sorted((k for k in data if "iOS" in k), reverse=True)
+          for rt in runtimes:
+              phones = [d for d in data[rt] if d["name"].startswith("iPhone") and "Pro" in d["name"]] or [d for d in data[rt] if d["name"].startswith("iPhone")]
+              if phones:
+                  print(phones[0]["udid"]); break
+          ')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Rega.xcodeproj -scheme RegaTests \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee unit.log | grep -E "error:|Test Case .*(passed|failed)|Executed|TEST (SUCCEEDED|FAILED)" || true
+          grep -q "TEST SUCCEEDED" unit.log
+
+      - name: UI screenshot tour
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Rega.xcodeproj -scheme RegaUITests \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath UITour.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee ui.log | grep -E "error:|Test Case .*(passed|failed)|Executed|TEST (SUCCEEDED|FAILED)" || true
+          grep -q "TEST SUCCEEDED" ui.log
+
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          xcrun xcresulttool export attachments --path UITour.xcresult --output-path screenshots || true
+          ls screenshots | head -60
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rega-test-results
+          path: |
+            rega/screenshots
+            rega/unit.log
+            rega/ui.log
+
+      - name: Publish screenshots to the rega-screenshots branch
+        if: always() && github.event_name == 'push'
+        run: |
+          OUT=$(mktemp -d)
+          python3 - "$OUT" <<'PY'
+          import json, subprocess, sys
+          out = sys.argv[1]
+          try:
+              manifest = json.load(open("screenshots/manifest.json"))
+          except Exception:
+              manifest = []
+          for test in manifest:
+              for a in test.get("attachments", []):
+                  name = a["suggestedHumanReadableName"].split("_")[0]
+                  subprocess.run(["sips", "-Z", "900", "-s", "format", "jpeg",
+                                  "screenshots/" + a["exportedFileName"], "--out", f"{out}/{name}.jpg"],
+                                 check=False, capture_output=True)
+          PY
+          { grep -E "Test Case .*(passed|failed)|Executed|error:|TEST (SUCCEEDED|FAILED)" unit.log ui.log || true; } > "$OUT/summary.txt"
+          echo "commit: $GITHUB_SHA" >> "$OUT/summary.txt"
+          cd "$OUT"
+          git init -q -b rega-screenshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Rega screenshots for $GITHUB_SHA"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" rega-screenshots
