@@ -62,6 +62,8 @@ jobs:
 
   test:
     runs-on: macos-15
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: gallery-cleaner
@@ -119,3 +121,31 @@ jobs:
           path: |
             gallery-cleaner/screenshots
             gallery-cleaner/test.log
+
+      - name: Publish screenshots to the test-screenshots branch
+        if: always() && github.event_name == 'push'
+        run: |
+          OUT=$(mktemp -d)
+          python3 - "$OUT" <<'PY'
+          import json, os, subprocess, sys
+          out = sys.argv[1]
+          try:
+              manifest = json.load(open("screenshots/manifest.json"))
+          except Exception:
+              manifest = []
+          for test in manifest:
+              for a in test.get("attachments", []):
+                  name = a["suggestedHumanReadableName"].split("_")[0]
+                  subprocess.run(["sips", "-Z", "900", "-s", "format", "jpeg",
+                                  "screenshots/" + a["exportedFileName"], "--out", f"{out}/{name}.jpg"],
+                                 check=False, capture_output=True)
+          PY
+          grep -E "Test Case .*(passed|failed)|Executed|error:|TEST (SUCCEEDED|FAILED)" test.log > "$OUT/summary.txt" || true
+          echo "commit: $GITHUB_SHA" >> "$OUT/summary.txt"
+          cd "$OUT"
+          git init -q -b test-screenshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Screenshots for $GITHUB_SHA"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" test-screenshots
