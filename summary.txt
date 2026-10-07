@@ -1,0 +1,29 @@
+Test Case '-[SwipeCleanTests.FormatTests testBytes]' passed (0.002 seconds).
+Test Case '-[SwipeCleanTests.FormatTests testHebrewDate]' passed (0.002 seconds).
+Test Case '-[SwipeCleanTests.FormatTests testNumberAndDuration]' passed (0.002 seconds).
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Case '-[SwipeCleanTests.ProgressStoreTests testCommittingDeletionsUpdatesTotals]' passed (0.010 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testCommittingFavorites]' passed (0.002 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testCorruptFileStartsFresh]' passed (0.004 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testDecodingIsTolerantToMissingFields]' passed (0.003 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testDropMissingPending]' passed (0.001 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testLastSevenDays]' passed (0.003 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testMarkTodayComplete]' passed (0.001 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testProgressPersistsAcrossLaunches]' passed (0.007 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testReachingDailyGoalCompletesDay]' passed (0.002 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testRecordKeepDeleteFavorite]' passed (0.003 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testRescueKeepsItemReviewed]' passed (0.003 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testResetKeepsSettings]' passed (0.001 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testStreakCountsConsecutiveDaysIncludingToday]' passed (0.001 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testStreakSurvivesUntilTodayIsDone]' passed (0.002 seconds).
+Test Case '-[SwipeCleanTests.ProgressStoreTests testUndoRevertsDecision]' passed (0.033 seconds).
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.076 (0.530) seconds
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.081 (0.538) seconds
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.081 (0.540) seconds
+Test Case '-[SwipeCleanUITests.SwipeCleanUITests testFullCleaningFlow]' passed (74.131 seconds).
+Test Case '-[SwipeCleanUITests.SwipeCleanUITests testProgressContinuesAfterRelaunch]' passed (30.668 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 104.799 (104.800) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 104.799 (104.801) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 104.799 (104.803) seconds
+** TEST SUCCEEDED **
+commit: e62a36fd1906520795fad11b663ea2912175744e
