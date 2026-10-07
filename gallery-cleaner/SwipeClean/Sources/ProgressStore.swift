@@ -82,7 +82,7 @@ final class ProgressStore: ObservableObject {
     private let fileURL: URL
     private let saveQueue = DispatchQueue(label: "swipeclean.progress.save", qos: .utility)
 
-    static var defaultURL: URL {
+    nonisolated static var defaultURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("progress.json")
