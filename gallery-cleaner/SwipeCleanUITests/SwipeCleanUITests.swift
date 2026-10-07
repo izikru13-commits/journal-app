@@ -2,14 +2,14 @@ import XCTest
 
 /// Runs the real app in the simulator against a photo library seeded by CI (see TestMedia/),
 /// walks through onboarding → swiping → summary → deletion, and saves screenshots.
+@MainActor
 final class SwipeCleanUITests: XCTestCase {
-    private var app: XCUIApplication!
-
-    override func setUpWithError() throws {
+    private lazy var app: XCUIApplication = {
         continueAfterFailure = false
-        app = XCUIApplication()
+        let app = XCUIApplication()
         app.launchArguments = ["-uiTesting"]
-    }
+        return app
+    }()
 
     private func snap(_ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
@@ -24,7 +24,7 @@ final class SwipeCleanUITests: XCTestCase {
         let labels = ["Allow Full Access", "Allow Access to All Photos", "Delete", "Modify", "Allow", "OK",
                       "אפשר גישה מלאה", "מחק", "שנה", "אפשר", "אישור"]
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        for source in [app!, springboard] {
+        for source in [app, springboard] {
             let alert = source.alerts.firstMatch
             if alert.waitForExistence(timeout: timeout) {
                 for label in labels where alert.buttons[label].exists {
@@ -51,14 +51,6 @@ final class SwipeCleanUITests: XCTestCase {
     }
 
     func testFullCleaningFlow() throws {
-        addUIInterruptionMonitor(withDescription: "System alert") { alert in
-            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK"] where alert.buttons[label].exists {
-                alert.buttons[label].tap()
-                return true
-            }
-            return false
-        }
-
         app.launch()
 
         // Onboarding: 3 pages, last button requests gallery access.
@@ -71,7 +63,6 @@ final class SwipeCleanUITests: XCTestCase {
         snap("03-onboarding-safety")
         next.tap()
         acceptSystemAlert(timeout: 3)
-        app.tap() // lets the interruption monitor fire if an alert is still up
 
         // Home
         let start = app.buttons["home.start"]
@@ -146,19 +137,11 @@ final class SwipeCleanUITests: XCTestCase {
     }
 
     func testProgressContinuesAfterRelaunch() throws {
-        addUIInterruptionMonitor(withDescription: "System alert") { alert in
-            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK"] where alert.buttons[label].exists {
-                alert.buttons[label].tap()
-                return true
-            }
-            return false
-        }
         app.launch()
         let next = app.buttons["onboarding.next"]
         XCTAssertTrue(next.waitForExistence(timeout: 15))
         next.tap(); next.tap(); next.tap()
         acceptSystemAlert(timeout: 3)
-        app.tap()
 
         let start = app.buttons["home.start"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))

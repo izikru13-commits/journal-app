@@ -124,15 +124,10 @@ final class ProgressStore: ObservableObject {
 
     // MARK: - Days & streak
 
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    static func key(for date: Date) -> String { dayFormatter.string(from: date) }
+    nonisolated static func key(for date: Date) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
 
     func rollDayIfNeeded() {
         let today = Self.key(for: Date())
