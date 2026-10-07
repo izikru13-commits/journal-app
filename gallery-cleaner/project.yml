@@ -1,0 +1,80 @@
+name: SwipeClean
+options:
+  bundleIdPrefix: com.swipeclean
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: he
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  SwipeClean:
+    type: application
+    platform: iOS
+    sources:
+      - SwipeClean/Sources
+      - SwipeClean/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.swipeclean.app
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: SwipeClean/Info.plist
+      properties:
+        CFBundleDisplayName: ניקוי בהחלקה
+        CFBundleDevelopmentRegion: he
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: AccentColor
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSPhotoLibraryUsageDescription: האפליקציה צריכה גישה לגלריה כדי להציג לך תמונות וסרטונים לסקירה. התמונות לא יוצאות מהטלפון ושום דבר לא נמחק בלי אישור שלך.
+        PHPhotoLibraryPreventAutomaticLimitedAccessAlert: true
+  SwipeCleanTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - SwipeCleanTests
+    dependencies:
+      - target: SwipeClean
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.swipeclean.app.tests
+  SwipeCleanUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - SwipeCleanUITests
+    dependencies:
+      - target: SwipeClean
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.swipeclean.app.uitests
+        TEST_TARGET_NAME: SwipeClean
+schemes:
+  SwipeClean:
+    build:
+      targets:
+        SwipeClean: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - SwipeCleanTests
+        - SwipeCleanUITests
+    archive:
+      config: Release
