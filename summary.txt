@@ -1,0 +1,60 @@
+unit.log:Test Case '-[RegaTests.BudgetMathTests testBudgetActiveOnlyOnExceededDayAndNotDismissed]' passed (0.009 seconds).
+unit.log:Test Case '-[RegaTests.BudgetMathTests testRemainingAndFraction]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.BudgetMathTests testSpuriousGuard]' passed (0.000 seconds).
+unit.log:Test Case '-[RegaTests.BudgetMathTests testThresholds]' passed (0.000 seconds).
+unit.log:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.010 (0.015) seconds
+unit.log:Test Case '-[RegaTests.DelayPolicyTests testBaseAboveMaxIsCapped]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.DelayPolicyTests testCappedAtMaximum]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.DelayPolicyTests testCustomSettings]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.DelayPolicyTests testDefaultEscalation]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.DelayPolicyTests testNegativeCountTreatedAsZero]' passed (0.001 seconds).
+unit.log:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.042) seconds
+unit.log:Test Case '-[RegaTests.EmergencyExitTests testCountsOnlyCurrentSundayBasedWeek]' passed (0.002 seconds).
+unit.log:Test Case '-[RegaTests.EmergencyExitTests testPhraseMustMatchExactly]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.EmergencyExitTests testPruneKeepsRecentUses]' passed (0.179 seconds).
+unit.log:Test Case '-[RegaTests.EmergencyExitTests testRemainingNeverNegative]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.EmergencyExitTests testResetsOnSunday]' passed (0.001 seconds).
+unit.log:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.183 (0.187) seconds
+unit.log:Test Case '-[RegaTests.EventLogTests testAttemptDeduplication]' passed (0.044 seconds).
+unit.log:Test Case '-[RegaTests.EventLogTests testOldEventsArePruned]' passed (0.010 seconds).
+unit.log:Test Case '-[RegaTests.EventLogTests testRecordUpdatesCounters]' passed (0.014 seconds).
+unit.log:Test Case '-[RegaTests.EventLogTests testSettingsDecodeWithMissingKeys]' passed (0.007 seconds).
+unit.log:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.075 (0.077) seconds
+unit.log:Test Case '-[RegaTests.KeyAndFormattingTests testDurationText]' passed (0.103 seconds).
+unit.log:Test Case '-[RegaTests.KeyAndFormattingTests testKeyPayloadRoundTrip]' passed (0.002 seconds).
+unit.log:Test Case '-[RegaTests.KeyAndFormattingTests testKnownAppSchemes]' passed (0.001 seconds).
+unit.log:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.106 (0.108) seconds
+unit.log:Test Case '-[RegaTests.LockScheduleTests testBudgetLockIsNeverStrict]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testDisabledLockNeverActive]' passed (0.023 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testDurationHelperCrossesMidnightAndClamps]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testEndingHintTurnsLockOff]' passed (0.000 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testManualSessionWindow]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testNextStart]' passed (0.002 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testOvernightLockBelongsToStartDay]' passed (0.009 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testOvernightLockSpansMidnight]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testOverrideEndsOnlyCurrentOccurrence]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.LockScheduleTests testStartingHintAbsorbsEarlyCallback]' passed (0.001 seconds).
+unit.log:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.039 (0.042) seconds
+unit.log:Test Case '-[RegaTests.StatsTests testDismissRate]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.StatsTests testLastDaysAndTotal]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.StatsTests testStreakCountsDaysWithinGoal]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.StatsTests testStreakStopsAtInstallDay]' passed (0.000 seconds).
+unit.log:Test Case '-[RegaTests.StatsTests testTopIntention]' passed (0.002 seconds).
+unit.log:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.005 (0.027) seconds
+unit.log:Test Case '-[RegaTests.UnlockMathTests testMergeReplacesSameTarget]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.UnlockMathTests testNextExpiry]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.UnlockMathTests testPendingRequestFreshness]' passed (0.000 seconds).
+unit.log:Test Case '-[RegaTests.UnlockMathTests testRelockWindowStartsAtExpiryAndLastsFifteenMinutes]' passed (0.000 seconds).
+unit.log:Test Case '-[RegaTests.UnlockMathTests testTargetKeysAreStableAndDistinct]' passed (0.001 seconds).
+unit.log:Test Case '-[RegaTests.UnlockMathTests testUnlockExpiresAfterMinutes]' passed (0.019 seconds).
+unit.log:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.022 (0.024) seconds
+unit.log:	 Executed 42 tests, with 0 failures (0 unexpected) in 0.444 (0.525) seconds
+unit.log:	 Executed 42 tests, with 0 failures (0 unexpected) in 0.444 (0.527) seconds
+unit.log:** TEST SUCCEEDED **
+ui.log:Test Case '-[RegaUITests.ScreenshotTour testInterventionGiveUpIsReachable]' passed (21.531 seconds).
+ui.log:Test Case '-[RegaUITests.ScreenshotTour testTour]' passed (208.143 seconds).
+ui.log:	 Executed 2 tests, with 0 failures (0 unexpected) in 229.673 (229.678) seconds
+ui.log:	 Executed 2 tests, with 0 failures (0 unexpected) in 229.673 (229.679) seconds
+ui.log:	 Executed 2 tests, with 0 failures (0 unexpected) in 229.673 (229.682) seconds
+ui.log:** TEST SUCCEEDED **
+commit: 4a4250db13c5a9eb7c0394407e14be9474b438fc
